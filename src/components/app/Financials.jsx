@@ -96,26 +96,16 @@ const Financials = ({ color, name }) => {
   };
 
   return (
-    <div className="p-1 md:p-4">
-      <HeaderTitle
-        title="Financials"
-        description="Access shipment billing, airline settlements, and financial summaries, all in one place."
-      />
-
-      {!createNow ? (
-        <Create
-          btnAction="Financials"
-          description="No financial data yet. Add your first record to get started"
-          icon={name ? `${name}-f.png` : "rwanda-f.png"}
-          key="financial"
-          title="No Financials"
-          onClick={handleCreateNow}
-          color={color}
-          name={name}
+    <div className="flex flex-col h-[calc(100vh-140px)] p-1 md:p-4">
+      <div className="flex-none">
+        <HeaderTitle
+          title="Financials"
+          description="Access shipment billing, airline settlements, and financial summaries, all in one place."
         />
-      ) : (
+      </div>
+      <div className="flex-1 overflow-x-auto px-2">
         <FinancialTable />
-      )}
+      </div>
     </div>
   );
 };

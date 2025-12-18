@@ -5,8 +5,8 @@ const DashboardHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
-    <header className="bg-white z-10 sticky top-0 right-0 shadow-sm border-b border-gray-200">
-      <div className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+    <div className="bg-white w-full">
+      <div className="flex items-center justify-between px-6 py-4 w-full">
         <button
           className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -38,7 +38,7 @@ const DashboardHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
           </svg>
         </button>
         {/* Search Bar */}
-        <div className="flex-1 max-w-md mx-auto lg:mx-0">
+        <div className="flex-1 max-w-sm mx-auto lg:mx-0">
           <div className="relative">
             <input
               type="text"
@@ -134,7 +134,7 @@ const DashboardHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
           </div>
         </div>
       </div>
-    </header>
+    </div>
   );
 };
 

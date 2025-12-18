@@ -1,61 +1,18 @@
 import React, { useState } from "react";
 
-const ShipmentTable = ({ color }) => {
-  const [data, setData] = useState([
-    {
-      id: 1,
-      airwayBillNumber: "AWB-1001",
-      status: "Accepted",
-      date: "2025-10-01",
-      note: null,
-    },
-    {
-      id: 2,
-      airwayBillNumber: "AWB-1002",
-      status: "Booked",
-      date: "2025-10-01",
-      note: null,
-    },
-    {
-      id: 3,
-      airwayBillNumber: "AWB-1003",
-      status: "Delivered",
-      date: "2025-10-01",
-      note: null,
-    },
-    {
-      id: 4,
-      airwayBillNumber: "AWB-1004",
-      status: "Flown",
-      date: "2025-10-01",
-      note: null,
-    },
-    {
-      id: 5,
-      airwayBillNumber: "AWB-1005",
-      status: "Booked",
-      date: "2025-10-01",
-      note: null,
-    },
-    {
-      id: 6,
-      airwayBillNumber: "AWB-1006",
-      status: "Accepted",
-      date: "2025-10-01",
-      note: null,
-    },
-    {
-      id: 7,
-      airwayBillNumber: "AWB-1007",
-      status: "Delivered",
-      date: "2025-10-01",
-      note: null,
-    },
-  ]);
-
+const ShipmentTable = ({ color, data, setData }) => {
   const [showModal, setShowModal] = useState(false);
   const [currentRowId, setCurrentRowId] = useState(null);
   const [newNote, setNewNote] = useState("");
+
+  // Create Shipment Modal State
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newShipment, setNewShipment] = useState({
+    airwayBillNumber: "",
+    status: "Booked",
+    date: "",
+    note: "",
+  });
 
   const statusColors = {
     Accepted: "bg-[#F6FEF9] text-[#006428]",
@@ -104,118 +61,154 @@ const ShipmentTable = ({ color }) => {
     closeModal();
   };
 
+  // Create Shipment Logic
+  const handleCreateShipment = () => {
+    if (!newShipment.airwayBillNumber || !newShipment.date) return;
+
+    const newId = data.length > 0 ? Math.max(...data.map((i) => i.id)) + 1 : 1;
+    const shipmentToAdd = {
+      id: newId,
+      airwayBillNumber: newShipment.airwayBillNumber,
+      status: newShipment.status,
+      date: newShipment.date,
+      note: newShipment.note
+        ? {
+            text: newShipment.note,
+            date: new Date().toISOString().split("T")[0],
+          }
+        : null,
+    };
+
+    setData((prev) => [...prev, shipmentToAdd]);
+    setShowCreateModal(false);
+    setNewShipment({
+      airwayBillNumber: "",
+      status: "Booked",
+      date: "",
+      note: "",
+    });
+  };
+
+  const inputClass =
+    "w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500";
+
   const currentRow = data.find((item) => item.id === currentRowId);
 
   return (
     <div className="p-6">
-      <table className="min-w-full table-auto border-collapse">
-        <thead>
-          <tr>
-            <th className="border-b border-gray-300 px-4 py-3 text-left">
-              Airway Bill Number
-            </th>
-            <th className="border-b border-gray-300 px-4 py-3 text-left">
-              Status
-            </th>
-            <th className="border-b border-gray-300 px-4 py-3 text-left">
-              Date
-            </th>
-            <th className="border-b border-gray-300 px-4 py-3 text-left">
-              Note
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item) => (
-            <tr key={item.id} className="hover:bg-gray-50 transition">
-              <td className="border-b border-gray-300 px-4 py-3">
-                {item.airwayBillNumber}
-              </td>
-              <td className="border-b border-gray-300 px-4 py-3">
-                <select
-                  value={item.status}
-                  onChange={(e) => updateStatus(item.id, e.target.value)}
-                  className={`px-4 py-3 rounded-full border ${
-                    statusColors[item.status]
-                  } focus:outline-none focus:ring-1 focus:ring-[#004DCC]`}
-                >
-                  {statusOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td className="border-b border-gray-300 px-4 py-3">
-                {item.date}
-              </td>
-              <td className="border-b border-gray-300 px-4 py-3">
-                {item.note ? (
-                  <div
-                    onClick={() => openModal(item.id)}
-                    className="cursor-pointer group flex items-center gap-2 max-w-md"
-                  >
-                    <span className="text-sm text-gray-800 truncate">
-                      {item.note.text}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      ({item.note.date})
-                    </span>
-                    <span className="opacity-0 group-hover:opacity-100 text-xs text-blue-600 font-medium transition">
-                      ✏️ Edit
-                    </span>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => openModal(item.id)}
-                    className="px-4 py-2  rounded-lg text-sm transition"
-                  >
-                    + Add Note
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold text-gray-800">Shipments</h2>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          style={{ backgroundColor: color }}
+          className="px-6 py-2.5 text-white rounded-lg hover:opacity-90 transition shadow-sm font-medium"
+        >
+          + Create Shipment
+        </button>
+      </div>
 
-      {/* Animated Modal */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full table-auto border-collapse">
+          <thead>
+            <tr>
+              <th className="border-b border-gray-300 px-4 py-3 text-left">
+                Airway Bill Number
+              </th>
+              <th className="border-b border-gray-300 px-4 py-3 text-left">
+                Status
+              </th>
+              <th className="border-b border-gray-300 px-4 py-3 text-left">
+                Date
+              </th>
+              <th className="border-b border-gray-300 px-4 py-3 text-left">
+                Note
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((item) => (
+              <tr key={item.id} className="hover:bg-gray-50 transition">
+                <td className="border-b border-gray-300 px-4 py-3">
+                  {item.airwayBillNumber}
+                </td>
+                <td className="border-b border-gray-300 px-4 py-3">
+                  <select
+                    value={item.status}
+                    onChange={(e) => updateStatus(item.id, e.target.value)}
+                    className={`px-4 py-3 rounded-full border ${
+                      statusColors[item.status]
+                    } focus:outline-none focus:ring-1 focus:ring-[#004DCC]`}
+                  >
+                    {statusOptions.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="border-b border-gray-300 px-4 py-3">
+                  {item.date}
+                </td>
+                <td className="border-b border-gray-300 px-4 py-3">
+                  {item.note ? (
+                    <div
+                      onClick={() => openModal(item.id)}
+                      className="cursor-pointer group flex items-center gap-2 max-w-md"
+                    >
+                      <span className="text-sm text-gray-800 truncate">
+                        {item.note.text}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({item.note.date})
+                      </span>
+                      <span className="opacity-0 group-hover:opacity-100 text-xs text-blue-600 font-medium transition">
+                        ✏️ Edit
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => openModal(item.id)}
+                      className="px-4 py-2 border rounded-lg text-sm transition hover:bg-gray-100"
+                    >
+                      + Add Note
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Note Modal */}
       {showModal && (
         <>
-          {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={closeModal}
           />
-
-          {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
-              className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 transform transition-all duration-300 ease-out scale-100 opacity-100 animate-in"
-              style={{
-                animation: "modalPop 0.3s ease-out forwards",
-              }}
+              className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 animate-in"
+              style={{ animation: "modalPop 0.3s ease-out forwards" }}
             >
               <h3 className="text-xl font-semibold mb-4">
                 Note for {currentRow?.airwayBillNumber}
               </h3>
-
               <textarea
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className={`${inputClass} resize-none`}
                 rows={5}
                 placeholder="Type your note here..."
                 autoFocus
               />
-
               {currentRow?.note && (
                 <div className="mt-3 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
                   <strong>Current note:</strong> {currentRow.note.text}{" "}
                   <span className="text-xs">({currentRow.note.date})</span>
                 </div>
               )}
-
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   onClick={closeModal}
@@ -227,9 +220,124 @@ const ShipmentTable = ({ color }) => {
                   onClick={saveNote}
                   disabled={!newNote.trim()}
                   style={{ backgroundColor: color }}
-                  className="px-5 py-2  disabled:bg-blue-300 text-white rounded-lg transition disabled:cursor-not-allowed"
+                  className="px-5 py-2 text-white rounded-lg transition disabled:cursor-not-allowed disabled:opacity-50"
+                  data-oid="save-note-btn"
                 >
                   Save Note
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Create Shipment Modal */}
+      {showCreateModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setShowCreateModal(false)}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 animate-in"
+              style={{ animation: "modalPop 0.3s ease-out forwards" }}
+            >
+              <h3 className="text-xl font-semibold mb-6">
+                Create New Shipment
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Airway Bill Number
+                  </label>
+                  <input
+                    type="text"
+                    value={newShipment.airwayBillNumber}
+                    onChange={(e) =>
+                      setNewShipment({
+                        ...newShipment,
+                        airwayBillNumber: e.target.value,
+                      })
+                    }
+                    className={inputClass}
+                    placeholder="e.g. AWB-1008"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={newShipment.status}
+                      onChange={(e) =>
+                        setNewShipment({
+                          ...newShipment,
+                          status: e.target.value,
+                        })
+                      }
+                      className={`${inputClass} appearance-none cursor-pointer`}
+                    >
+                      {statusOptions.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                      ▼
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newShipment.date}
+                    onChange={(e) =>
+                      setNewShipment({ ...newShipment, date: e.target.value })
+                    }
+                    className={inputClass}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Note
+                  </label>
+                  <textarea
+                    value={newShipment.note}
+                    onChange={(e) =>
+                      setNewShipment({ ...newShipment, note: e.target.value })
+                    }
+                    className={`${inputClass} resize-none`}
+                    rows={3}
+                    placeholder="Optional note"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-8">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateShipment}
+                  disabled={!newShipment.airwayBillNumber || !newShipment.date}
+                  style={{ backgroundColor: color }}
+                  className="px-5 py-2 text-white rounded-lg transition disabled:cursor-not-allowed disabled:opacity-50"
+                  data-oid="create-shipment-btn"
+                >
+                  Create
                 </button>
               </div>
             </div>
@@ -242,7 +350,7 @@ const ShipmentTable = ({ color }) => {
         @keyframes modalPop {
           from {
             opacity: 0;
-            transform: scale(0.9) translateY(-20px);
+            transform: scale(0.95) translateY(-10px);
           }
           to {
             opacity: 1;
@@ -253,5 +361,4 @@ const ShipmentTable = ({ color }) => {
     </div>
   );
 };
-
 export default ShipmentTable;
