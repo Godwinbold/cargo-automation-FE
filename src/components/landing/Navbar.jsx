@@ -1,16 +1,17 @@
 import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [activeAirline, setActiveAirline] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const airlines = [
-    "Turkish Airline",
-    "Air Cote D'voiure",
-    "South African Airways",
-    "United Cargo",
-    "RwandAir",
+    { name: "Turkish Airline", link: "/login?name=turkish" },
+    { name: "Air Cote D'voiure", link: "/login?name=codiv" },
+    { name: "South African Airways", link: "/login?name=southafrica" },
+    { name: "United Cargo", link: "/login?name=united" },
+    { name: "RwandAir", link: "/login?name=rwandair" },
   ];
 
   const toggleMenu = () => {
@@ -26,7 +27,7 @@ const Navbar = () => {
     <>
       <nav className="flex w-full py-1 max-w-5xl md:h-[97px] justify-between px-2 md:pl-[40px] md:pr-[45px] md:rounded-2xl mx-auto items-center bg-white gap-6">
         {/* logo  */}
-        <div className="h-[40px] md:h-[61px]  max-w-[154px]">
+        <div className="h-[40px] md:h-[60px]  max-w-[154px]">
           <img
             src="/icons/logo.svg"
             alt="Logo"
@@ -37,22 +38,25 @@ const Navbar = () => {
         {/* airline list - desktop */}
         <ul className="hidden lg:flex flex-wrap items-center gap-6">
           {airlines.map((airline, index) => (
-            <li
+            <Link
+              to={airline.link}
               key={index}
-              onClick={() => setActiveAirline(airline)}
+              onClick={() => setActiveAirline(airline.name)}
               className={`text-sm font-medium cursor-pointer transition-all duration-300 hover:text-[#3DA5E0] relative group ${
-                activeAirline === airline ? "text-[#3DA5E0]" : "text-gray-700"
+                activeAirline === airline.name
+                  ? "text-[#3DA5E0]"
+                  : "text-gray-700"
               }`}
             >
-              {airline}
+              {airline.name}
               <span
                 className={`absolute bottom-0 left-0 w-full h-0.5 bg-[#3DA5E0] transform origin-left transition-transform duration-300 ${
-                  activeAirline === airline
+                  activeAirline === airline.name
                     ? "scale-x-100"
                     : "scale-x-0 group-hover:scale-x-100"
                 }`}
               ></span>
-            </li>
+            </Link>
           ))}
         </ul>
 
@@ -94,15 +98,18 @@ const Navbar = () => {
         {/* mobile airline list */}
         <ul className="flex flex-col px-6 gap-4">
           {airlines.map((airline, index) => (
-            <li
+            <Link
+              to={airline.link}
               key={index}
-              onClick={() => handleAirlineClick(airline)}
+              onClick={() => handleAirlineClick(airline.name)}
               className={`text-base font-medium cursor-pointer transition-all duration-300 hover:text-[#3DA5E0] py-3 border-b border-gray-100 ${
-                activeAirline === airline ? "text-[#3DA5E0]" : "text-gray-700"
+                activeAirline === airline.name
+                  ? "text-[#3DA5E0]"
+                  : "text-gray-700"
               }`}
             >
-              {airline}
-            </li>
+              {airline.name}
+            </Link>
           ))}
         </ul>
       </div>
