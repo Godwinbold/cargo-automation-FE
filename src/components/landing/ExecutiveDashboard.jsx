@@ -1,10 +1,7 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 export default function ExecutivesDashboard() {
-  const handleLogin = () => {
-    alert("Login functionality would be implemented here");
-  };
-
   return (
     <div
       className="bg-[#f6fbfe]
@@ -20,12 +17,12 @@ export default function ExecutivesDashboard() {
           </p>
 
           <div className="pt-5">
-            <button
-              onClick={handleLogin}
+            <Link
+              to="/executive-login"
               className="w-full max-w-md mx-auto bg-[#3DA5E0] text-white font-semibold text-lg py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
             >
               Login
-            </button>
+            </Link>
           </div>
         </div>
       </div>

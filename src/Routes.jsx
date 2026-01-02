@@ -8,6 +8,13 @@ import Documents from "./components/app/Documents";
 import ManageShipping from "./components/app/ManageShipping";
 import DashboardLayout from "./components/app/DashboardLayout";
 
+import ExecutiveDashboard from "./components/app/ExecutiveDashboard";
+import ExecutiveSignup from "./components/auth/ExecutiveSignup";
+import ExecutiveLogin from "./components/auth/ExecutiveLogin";
+import ExecutiveForgotPasswordPage from "./components/auth/ExecutiveForgotPassword";
+import ExecutiveLayout from "./components/app/ExecutiveLayout";
+import ExecutiveAnalytical from "./components/app/ExecutiveAnalytical";
+
 const AppRoutes = () => {
   return (
     <main>
@@ -16,6 +23,17 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/executive-login" element={<ExecutiveLogin />} />
+
+        <Route path="/executive-signup" element={<ExecutiveSignup />} />
+        <Route
+          path="/executive-forgot-password"
+          element={<ExecutiveForgotPasswordPage />}
+        />
+        <Route path="/executive-dashboard" element={<ExecutiveLayout />}>
+          <Route index element={<ExecutiveDashboard />} />
+          <Route path="analytical" element={<ExecutiveAnalytical />} />
+        </Route>
 
         <Route
           path="/united-dashboard"

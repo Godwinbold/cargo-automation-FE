@@ -16,29 +16,29 @@ const AirlinePartners = () => {
 
       <div className="grid grid-cols-1  sm:grid-cols-2 gap-10 md:gap-16 mt-5">
         <DeptCard
-          title="Turkish Airlines Cargo"
+          title="Turkish Airlines"
           image="/icons/turkish.svg"
           link="/login?name=turkish"
         />
         <DeptCard
-          title="Turkish Airlines Cargo"
+          title="Rwandair"
           image="/icons/rwandair.svg"
           link="/login?name=rwandair"
         />
         <DeptCard
-          title="Turkish Airlines Cargo"
+          title="United"
           image="/icons/united.svg"
           link="/login?name=united"
         />
         <DeptCard
-          title="Turkish Airlines Cargo"
+          title="South Africa Airways"
           image="/icons/south-africa.svg"
           link="/login?name=southafrica"
         />
         <div className="flex sm:col-span-2 md:justify-center">
           <div className="w-full md:w-1/2 lg:w-1/2">
             <DeptCard
-              title="Turkish Airlines Cargo"
+              title="Air Côte d'Ivoire"
               image="/icons/codiv.svg"
               link="/login?name=codiv"
             />
