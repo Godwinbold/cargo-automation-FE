@@ -118,13 +118,21 @@ const DashboardHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
                 <Link
-                  to="#"
+                  to={`#${
+                    localStorage.getItem("airlineId")
+                      ? `?airlineId=${localStorage.getItem("airlineId")}`
+                      : ""
+                  }`}
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                 >
                   Change Password
                 </Link>
                 <Link
-                  to="#"
+                  to={`#${
+                    localStorage.getItem("airlineId")
+                      ? `?airlineId=${localStorage.getItem("airlineId")}`
+                      : ""
+                  }`}
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                 >
                   Log Out

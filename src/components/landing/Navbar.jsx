@@ -1,26 +1,13 @@
 import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import airlineMetadata from "./AirlineMetadata";
 
-const Navbar = () => {
-  const [activeAirline, setActiveAirline] = useState(null);
+const Navbar = ({ airlines = [], isPending, isError }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const airlines = [
-    { name: "Turkish Airline", link: "/login?name=turkish" },
-    { name: "Air Cote D'voiure", link: "/login?name=codiv" },
-    { name: "South African Airways", link: "/login?name=southafrica" },
-    { name: "United Cargo", link: "/login?name=united" },
-    { name: "RwandAir", link: "/login?name=rwandair" },
-  ];
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
-  };
-
-  const handleAirlineClick = (airline) => {
-    setActiveAirline(airline);
-    setIsMenuOpen(false);
   };
 
   return (
@@ -36,29 +23,23 @@ const Navbar = () => {
         </div>
 
         {/* airline list - desktop */}
-        <ul className="hidden lg:flex flex-wrap items-center gap-6">
-          {airlines.map((airline, index) => (
-            <Link
-              to={airline.link}
-              key={index}
-              onClick={() => setActiveAirline(airline.name)}
-              className={`text-sm font-medium cursor-pointer transition-all duration-300 hover:text-[#3DA5E0] relative group ${
-                activeAirline === airline.name
-                  ? "text-[#3DA5E0]"
-                  : "text-gray-700"
-              }`}
-            >
-              {airline.name}
-              <span
-                className={`absolute bottom-0 left-0 w-full h-0.5 bg-[#3DA5E0] transform origin-left transition-transform duration-300 ${
-                  activeAirline === airline.name
-                    ? "scale-x-100"
-                    : "scale-x-0 group-hover:scale-x-100"
-                }`}
-              ></span>
-            </Link>
-          ))}
-        </ul>
+        <div className="hidden lg:flex flex-wrap items-center gap-6">
+          {airlines.map((airline) => {
+            const metadata = airlineMetadata[airline.airlineName] || {
+              slug: airline.airlineName.toLowerCase().replace(/\s+/g, ""),
+            };
+            return (
+              <Link
+                to={`/login?name=${metadata.slug}&airlineId=${airline.id}`}
+                key={airline.id}
+                className="text-sm font-medium cursor-pointer transition-all duration-300 hover:text-[#3DA5E0] relative group text-gray-700"
+              >
+                {airline.airlineName}
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#3DA5E0] transform origin-left transition-transform duration-300 scale-x-0 group-hover:scale-x-100"></span>
+              </Link>
+            );
+          })}
+        </div>
 
         {/* hamburger button - mobile */}
         <button
@@ -72,7 +53,7 @@ const Navbar = () => {
 
       {/* mobile menu overlay */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-1000 transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 bg-black bg-opacity-50 z-[1000] transition-opacity duration-300 lg:hidden ${
           isMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={toggleMenu}
@@ -96,22 +77,23 @@ const Navbar = () => {
         </div>
 
         {/* mobile airline list */}
-        <ul className="flex flex-col px-6 gap-4">
-          {airlines.map((airline, index) => (
-            <Link
-              to={airline.link}
-              key={index}
-              onClick={() => handleAirlineClick(airline.name)}
-              className={`text-base font-medium cursor-pointer transition-all duration-300 hover:text-[#3DA5E0] py-3 border-b border-gray-100 ${
-                activeAirline === airline.name
-                  ? "text-[#3DA5E0]"
-                  : "text-gray-700"
-              }`}
-            >
-              {airline.name}
-            </Link>
-          ))}
-        </ul>
+        <div className="flex flex-col px-6 gap-4">
+          {airlines.map((airline) => {
+            const metadata = airlineMetadata[airline.airlineName] || {
+              slug: airline.airlineName.toLowerCase().replace(/\s+/g, ""),
+            };
+            return (
+              <Link
+                to={`/login?name=${metadata.slug}&airlineId=${airline.id}`}
+                key={airline.id}
+                onClick={toggleMenu}
+                className="text-base font-medium cursor-pointer transition-all duration-300 hover:text-[#3DA5E0] py-3 border-b border-gray-100 text-gray-700"
+              >
+                {airline.airlineName}
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </>
   );

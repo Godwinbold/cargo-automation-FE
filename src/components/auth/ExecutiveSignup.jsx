@@ -1,350 +1,212 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useRegisterExecutive } from "../../hooks/useAuth";
+import { useGetAllAirlines } from "../../hooks/useGeneral";
+import { toast } from "sonner";
+
+
+const InputField = ({ label, name, value, formData, handleChange, handleBlur, errors, touched, showPassword, setShowPassword, showConfirmPassword, setShowConfirmPassword, type = "text", placeholder, isSelect = false, options = [], isLoading = false }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      {label}
+    </label>
+    <div className="relative">
+      {isSelect ? (
+        <select
+          name={name}
+          value={value}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          disabled={isLoading}
+          className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
+            errors[name] && touched[name]
+              ? "border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:ring-[var(--primary-color)] focus:border-transparent"
+          }`}
+        >
+          <option value="">Select Airline</option>
+          {options.map(opt => (
+            <option key={opt.id} value={opt.id}>{opt.airlineName}</option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type={type}
+          name={name}
+          value={value}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder={placeholder}
+          className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
+            errors[name] && touched[name]
+              ? "border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:ring-[var(--primary-color)] focus:border-transparent"
+          }`}
+        />
+      )}
+
+      {(name === "password" || name === "confirmPassword") && (
+        <button
+          type="button"
+          onClick={() => name === "password" ? setShowPassword(!showPassword) : setShowConfirmPassword(!showConfirmPassword)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+        >
+          {(name === "password" ? showPassword : showConfirmPassword) ? <EyeOff size={20} /> : <Eye size={20} />}
+        </button>
+      )}
+    </div>
+    {errors[name] && touched[name] && (
+      <p className="mt-1 text-xs text-red-600">{errors[name]}</p>
+    )}
+  </div>
+);
 
 const ExecutiveSignup = () => {
-  const [step, setStep] = useState("form"); // "form" | "otp"
+  const navigate = useNavigate();
+  const { mutate: registerExecutive, isPending: isRegistering } = useRegisterExecutive();
+  const { data: airlinesData, isLoading: isLoadingAirlines } = useGetAllAirlines();
+  
+  const airlines = airlinesData?.data || [];
+
   const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    middleName: "",
     email: "",
+    phoneNumber: "",
+    idNumber: "",
+    airlineId: "",
     password: "",
     confirmPassword: "",
   });
-  const [otp, setOtp] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [touched, setTouched] = useState({
-    email: false,
-    password: false,
-    confirmPassword: false,
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isResending, setIsResending] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
-  // Validate single field
   const validateField = (name, value) => {
-    let error = "";
-
+    if (!value && name !== "middleName") return `${name.charAt(0).toUpperCase() + name.slice(1).replace(/([A-Z])/g, ' $1')} is required`;
+    
     if (name === "email") {
-      if (!value) error = "Email is required";
-      else if (!/^\S+@\S+\.\S+$/.test(value))
-        error = "Please enter a valid email address";
+      if (!/^\S+@\S+\.\S+$/.test(value)) return "Enter a valid email address";
     }
-
+    
     if (name === "password") {
-      if (!value) error = "Password is required";
-      else if (value.length < 8)
-        error = "Password must be at least 8 characters";
+      if (value.length < 8) return "Password must be at least 8 characters";
     }
-
+    
     if (name === "confirmPassword") {
-      if (!value) error = "Please confirm your password";
-      else if (value !== formData.password) error = "Passwords do not match";
+      if (value !== formData.password) return "Passwords do not match";
     }
-
-    return error;
-  };
-
-  // Validate all fields
-  const validateForm = () => {
-    const newErrors = {
-      email: validateField("email", formData.email),
-      password: validateField("password", formData.password),
-      confirmPassword: validateField(
-        "confirmPassword",
-        formData.confirmPassword
-      ),
-    };
-    setErrors(newErrors);
-    return newErrors;
+    
+    return "";
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
     if (touched[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: validateField(name, value),
-      }));
+      setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
     }
   };
 
   const handleBlur = (e) => {
-    const { name } = e.target;
+    const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
-    setErrors((prev) => ({
-      ...prev,
-      [name]: validateField(name, formData[name]),
-    }));
+    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
   };
 
-  const handleFormSubmit = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
+    
+    const newErrors = {};
+    Object.keys(formData).forEach(key => {
+      const error = validateField(key, formData[key]);
+      if (error) newErrors[key] = error;
+    });
 
-    setTouched({ email: true, password: true, confirmPassword: true });
-    const currentErrors = validateForm();
+    setErrors(newErrors);
+    setTouched(Object.keys(formData).reduce((acc, last) => ({ ...acc, [last]: true }), {}));
 
-    const hasErrors = Object.values(currentErrors).some((err) => err !== "");
-    if (hasErrors) return;
-
-    // Simulate registration success → go to OTP step
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep("otp");
-      alert("Registration successful! Check your email for OTP.");
-    }, 1200);
-  };
-
-  const handleOtpChange = (index, value) => {
-    if (!/^\d?$/.test(value)) return;
-
-    const newOtp = otp.split("");
-    newOtp[index] = value;
-    setOtp(newOtp.join(""));
-
-    // Auto-focus next box
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      nextInput?.focus();
+    if (Object.keys(newErrors).length > 0) {
+      toast.error("Please fix the errors in the form");
+      return;
     }
-  };
 
-  const handleOtpKeyDown = (e, index) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      document.getElementById(`otp-${index - 1}`)?.focus();
-    }
-  };
+    const { confirmPassword, ...payload } = formData;
 
-  const handleOtpSubmit = (e) => {
-    e.preventDefault();
-    if (otp.length !== 6) return;
-
-    setIsVerifying(true);
-
-    // Simulate OTP verification
-    setTimeout(() => {
-      setIsVerifying(false);
-
-      if (otp === "123456") {
-        alert("Account verified successfully!");
-        // Redirect to config-defined login/dashboard
-        window.location.href = "/executive-login";
-      } else {
-        alert("Invalid OTP. Try 123456 for demo.");
-        setOtp("");
+    registerExecutive(payload, {
+      onSuccess: () => {
+        toast.success("Executive registered successfully!");
+        navigate("/executive-login");
+      },
+      onError: (error) => {
+        const message = error?.response?.data?.message || "Registration failed. Please try again.";
+        toast.error(message);
       }
-    }, 1500);
+    });
   };
 
-  const handleResend = () => {
-    setIsResending(true);
-    setTimeout(() => {
-      setIsResending(false);
-      setOtp("");
-      alert("New OTP sent! (Use 123456)");
-    }, 1000);
+  const inputProps = {
+    formData,
+    handleChange,
+    handleBlur,
+    errors,
+    touched,
+    showPassword,
+    setShowPassword,
+    showConfirmPassword,
+    setShowConfirmPassword
   };
 
-  const isFormValid =
-    formData.email &&
-    formData.password &&
-    formData.confirmPassword &&
-    !errors.email &&
-    !errors.password &&
-    !errors.confirmPassword;
-
-  // OTP Step
-  if (step === "otp") {
-    return (
-      <div className="h-screen w-full bg-[url('/images/loginbg.png')] bg-cover bg-center flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
-          <div className="flex justify-center mb-8">
-            <img src="/icons/logo.svg" alt="logo" className="h-14" />
-          </div>
-
-          <h1 className="text-2xl font-bold text-center text-gray-800 mb-3">
-            Verify Your Email
-          </h1>
-          <p className="text-sm text-gray-600 text-center mb-6">
-            We sent a 6-digit code to
-          </p>
-          <p className="text-center font-semibold text-gray-800 mb-8">
-            {formData.email}
-          </p>
-
-          <form onSubmit={handleOtpSubmit} className="space-y-6">
-            <div className="flex justify-center gap-3">
-              {Array.from({ length: 6 }, (_, i) => (
-                <input
-                  key={i}
-                  id={`otp-${i}`}
-                  type="text"
-                  maxLength={1}
-                  value={otp[i] || ""}
-                  onChange={(e) => handleOtpChange(i, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(e, i)}
-                  className="w-12 h-12 text-2xl font-bold text-center border-2 rounded-xl focus:outline-none focus:border-[var(--primary-color)] transition-colors"
-                  style={{
-                    borderColor: otp[i] ? "var(--primary-color)" : "#e5e7eb",
-                  }}
-                />
-              ))}
-            </div>
-
-            {otp.length !== 6 && otp.length > 0 && (
-              <p className="text-xs text-red-600 text-center">
-                Enter all 6 digits
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={isVerifying || otp.length !== 6}
-              className="w-full py-4 bg-[#3DA5E0] text-white font-semibold rounded-xl hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-            >
-              {isVerifying ? <>Verifying...</> : "Verify & Continue"}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center space-y-3">
-            <p className="text-sm text-gray-600">
-              Didn't receive it?{" "}
-              <button
-                onClick={handleResend}
-                disabled={isResending}
-                className="font-medium text-[var(--primary-color)] hover:underline"
-              >
-                {isResending ? "Sending..." : "Resend OTP"}
-              </button>
-            </p>
-            <button
-              onClick={() => setStep("form")}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              ← Back to registration
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Registration Form Step
   return (
-    <div className="h-screen w-full py-4 bg-[url('/images/loginbg.png')] bg-cover bg-center flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+    <div className="min-h-screen w-full py-8 bg-[url('/images/loginbg.png')] bg-cover bg-center flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8 max-h-[95vh] overflow-y-auto custom-scrollbar">
         <div className="flex justify-center mb-8">
           <img src="/icons/logo.svg" alt="logo" className="h-14" />
         </div>
 
-        <h1 className="text-2xl font-semibold text-left text-gray-800 mb-2">
+        <h1 className="text-2xl font-semibold text-left text-gray-800 mb-6">
           Sign Up
         </h1>
 
-        <form onSubmit={handleFormSubmit} className="space-y-5">
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              placeholder="you@example.com"
-              className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
-                errors.email && touched.email
-                  ? "border-red-500 focus:ring-red-500"
-                  : "border-gray-300 focus:ring-[var(--primary-color)] focus:border-transparent"
-              }`}
-            />
-            {errors.email && touched.email && (
-              <p className="mt-1 text-xs text-red-600">{errors.email}</p>
-            )}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <InputField label="First Name" name="firstName" value={formData.firstName} placeholder="John" {...inputProps} />
+            <InputField label="Last Name" name="lastName" value={formData.lastName} placeholder="Doe" {...inputProps} />
+          </div>
+          
+          <InputField label="Middle Name (Optional)" name="middleName" value={formData.middleName} placeholder="Owolabi" {...inputProps} />
+          <InputField label="Email Address" name="email" type="email" value={formData.email} placeholder="you@example.com" {...inputProps} />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <InputField label="Phone Number" name="phoneNumber" value={formData.phoneNumber} placeholder="+123 456 7890" {...inputProps} />
+            <InputField label="ID Number" name="idNumber" value={formData.idNumber} placeholder="ID-12345" {...inputProps} />
           </div>
 
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="••••••••"
-                className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
-                  errors.password && touched.password
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-[var(--primary-color)] focus:border-transparent"
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-            {errors.password && touched.password && (
-              <p className="mt-1 text-xs text-red-600">{errors.password}</p>
-            )}
-          </div>
+          <InputField 
+            label="Airline" 
+            name="airlineId" 
+            value={formData.airlineId}
+            isSelect={true} 
+            options={airlines} 
+            isLoading={isLoadingAirlines}
+            {...inputProps}
+          />
 
-          {/* Confirm Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confirm Password
-            </label>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="••••••••"
-                className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
-                  errors.confirmPassword && touched.confirmPassword
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-[var(--primary-color)] focus:border-transparent"
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-              >
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-            {errors.confirmPassword && touched.confirmPassword && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.confirmPassword}
-              </p>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <InputField label="Password" name="password" type={showPassword ? "text" : "password"} value={formData.password} placeholder="••••••••" {...inputProps} />
+            <InputField label="Confirm Password" name="confirmPassword" type={showConfirmPassword ? "text" : "password"} value={formData.confirmPassword} placeholder="••••••••" {...inputProps} />
           </div>
 
           <button
             type="submit"
-            disabled={isLoading || !isFormValid}
-            className="w-full py-4 bg-[#3DA5E0] text-white font-bold rounded-xl hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            disabled={isRegistering}
+            className="w-full py-4 bg-[#3DA5E0] text-white font-bold rounded-xl hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-4"
           >
-            {isLoading ? "Creating Account..." : "Sign Up"}
+            {isRegistering ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
 

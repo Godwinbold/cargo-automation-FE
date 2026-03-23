@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { LOGIN_NAME_CONFIGS } from "../../constants/configFile";
+import { useLoginAirlineUser } from "../../hooks/useAuth";
+import { toast } from "sonner";
+import { SaveToLocalStorage } from "../../utils/getFromLocals";
 
 const LoginPage = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const nameSlug = searchParams.get("name") || "codiv";
+  const airlineId = searchParams.get("airlineId");
+
+  const { mutate: loginUser, isPending: isLoading } = useLoginAirlineUser();
+
+  useEffect(() => {
+    if (airlineId) {
+      localStorage.setItem("airlineId", airlineId);
+    }
+  }, [airlineId]);
+
   const config = LOGIN_NAME_CONFIGS[nameSlug];
 
   if (!config) {
@@ -20,9 +34,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [touched, setTouched] = useState({ email: false, password: false });
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Validate single field
   const validateField = (name, value) => {
     let error = "";
 
@@ -40,7 +52,6 @@ const LoginPage = () => {
     return error;
   };
 
-  // Validate all fields and return errors object
   const validateForm = () => {
     const emailError = validateField("email", formData.email);
     const passwordError = validateField("password", formData.password);
@@ -50,12 +61,10 @@ const LoginPage = () => {
     return newErrors;
   };
 
-  // Real-time validation on change + blur
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Only show error if field has been touched
     if (touched[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -76,28 +85,52 @@ const LoginPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Mark all fields as touched
     setTouched({ email: true, password: true });
-
-    // Validate everything
     const currentErrors = validateForm();
 
-    // Check if any error exists
     const hasErrors = Object.values(currentErrors).some((err) => err !== "");
-    if (hasErrors) {
-      return; // Stop submission
+    if (hasErrors) return;
+
+    if (!airlineId) {
+      toast.error("Airline ID missing. Please return to partners page.");
+      return;
     }
 
-    // Simulate login success
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      alert(`Login successful! Redirecting to ${config.redirectTo}`);
-      window.location.href = config.redirectTo;
-    }, 1200);
+    loginUser(
+      { airlineId, credentials: formData },
+      {
+        onSuccess: (response) => {
+          toast.success("Login successful!");
+
+          const loginData = response?.data;
+          const targetAirlineId = loginData?.airlineId || airlineId;
+
+          // Store token and user data
+          if (loginData?.token) {
+            SaveToLocalStorage("access_token", loginData.token);
+          }
+          if (loginData) {
+            SaveToLocalStorage("user", loginData);
+            if (loginData.airlineId) {
+              localStorage.setItem("airlineId", loginData.airlineId);
+            }
+          }
+
+          setTimeout(() => {
+            navigate(`${config.redirectTo}?airlineId=${targetAirlineId}`);
+          }, 1000);
+        },
+        onError: (error) => {
+          const message =
+            error.response?.data?.errors?.[0]?.message ||
+            error.response?.data?.message ||
+            "Invalid credentials";
+          toast.error(message);
+        },
+      },
+    );
   };
 
-  // Optional: Disable button if form is invalid or empty
   const isFormValid =
     formData.email && formData.password && !errors.email && !errors.password;
 
@@ -192,39 +225,18 @@ const LoginPage = () => {
             disabled={isLoading || !isFormValid}
             className="w-full py-3 bg-[var(--primary-color)] text-white font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
           >
-            {isLoading ? (
-              <>
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                Logging in...
-              </>
-            ) : (
-              "Login"
-            )}
+            {isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-6">
           Don't have an account?{" "}
-          <a
-            href={config.signupLink}
+          <Link
+            to={`/register?name=${nameSlug}&airlineId=${airlineId}`}
             className="text-[var(--primary-color)] font-medium hover:underline"
           >
             Sign up
-          </a>
+          </Link>
         </p>
       </div>
     </div>
