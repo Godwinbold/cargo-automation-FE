@@ -6,20 +6,28 @@ const Sidebar = ({ setMobileMenuOpen, color, name }) => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation(); // This gets the current URL
 
+  const airlineId =
+    new URLSearchParams(location.search).get("airlineId") ||
+    localStorage.getItem("airlineId");
+
   // Define your navigation items
   const navItems = [
     {
-      to: `/${name}-dashboard`,
+      to: `/${name}-dashboard${airlineId ? `?airlineId=${airlineId}` : ""}`,
       label: "Financial",
       icon: "/icons/financial.svg",
     },
     {
-      to: `/${name}-dashboard/manage-shipping`,
+      to: `/${name}-dashboard/manage-shipping${
+        airlineId ? `?airlineId=${airlineId}` : ""
+      }`,
       label: "Manage Shipments",
       icon: "/icons/shipment.svg",
     },
     {
-      to: `/${name}-dashboard/document`,
+      to: `/${name}-dashboard/document${
+        airlineId ? `?airlineId=${airlineId}` : ""
+      }`,
       label: "Documents",
       icon: "/icons/document.svg",
     },
@@ -27,13 +35,14 @@ const Sidebar = ({ setMobileMenuOpen, color, name }) => {
 
   // Determine if a menu item is active
   const isActive = (path) => {
-    if (path === `/${name}-dashboard`) {
-      return (
-        location.pathname === `/${name}-dashboard` ||
-        location.pathname === `/${name}-dashboard/`
-      );
+    // Remove query params for comparison
+    const currentPath = location.pathname;
+    const targetPath = path.split("?")[0];
+
+    if (targetPath === `/${name}-dashboard`) {
+      return currentPath === `/${name}-dashboard` || currentPath === `/${name}-dashboard/`;
     }
-    return location.pathname.startsWith(path);
+    return currentPath.startsWith(targetPath);
   };
 
   return (
