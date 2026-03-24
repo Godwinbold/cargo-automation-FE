@@ -6,7 +6,10 @@ import {
   useAddShipmentNote,
   useDeleteShipment,
 } from "../../hooks/useShipment";
-import { MoreHorizontal, Eye, MessageSquarePlus, Trash2 } from "lucide-react";
+import { MoreHorizontal, Eye, MessageSquarePlus, Trash2, CircleDollarSign, FileUp } from "lucide-react";
+import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import CreateFinancialsModal from "./CreateFinancialsModal";
+import UploadDocumentModal from "./UploadDocumentModal";
 
 const ShipmentTable = ({
   color,
@@ -21,13 +24,18 @@ const ShipmentTable = ({
 }) => {
   const queryClient = useQueryClient();
   const { mutate: addNoteMutation, isLoading: isSavingNote } = useAddShipmentNote();
-  const { mutate: deleteShipmentMutation } = useDeleteShipment();
+  const { mutate: deleteShipmentMutation, isPending: isDeleting } = useDeleteShipment();
 
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // "add", "edit", "view"
   const [currentRowId, setCurrentRowId] = useState(null);
   const [newNote, setNewNote] = useState("");
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [shipmentToDelete, setShipmentToDelete] = useState(null);
+  const [showFinancialsModal, setShowFinancialsModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedShipment, setSelectedShipment] = useState(null);
   const menuRef = useRef(null);
 
   // Close menu on click outside
@@ -95,23 +103,31 @@ const ShipmentTable = ({
     );
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this shipment?")) {
-      deleteShipmentMutation(
-        { airlineId, id },
-        {
-          onSuccess: () => {
-            queryClient.invalidateQueries(["shipments", airlineId]);
-            toast.success("Shipment deleted successfully");
-            setActiveMenuId(null);
-          },
-          onError: (err) => {
-            console.error("Error deleting shipment:", err);
-            toast.error("Failed to delete shipment.");
-          },
+  const handleDeleteClick = (shipment) => {
+    setShipmentToDelete(shipment);
+    setShowDeleteModal(true);
+    setActiveMenuId(null);
+  };
+
+  const confirmDelete = () => {
+    if (!shipmentToDelete) return;
+
+    deleteShipmentMutation(
+      { airlineId, id: shipmentToDelete.id },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries(["shipments", airlineId]);
+          toast.success("Shipment deleted successfully");
+          setShowDeleteModal(false);
+          setShipmentToDelete(null);
         },
-      );
-    }
+        onError: (err) => {
+          console.error("Error deleting shipment:", err);
+          toast.error("Failed to delete shipment.");
+          setShowDeleteModal(false);
+        },
+      },
+    );
   };
 
   const inputClass =
@@ -209,14 +225,36 @@ const ShipmentTable = ({
                             <MessageSquarePlus className="w-4 h-4 text-green-500" />
                             Add Note
                           </button>
-                          <div className="h-px bg-gray-100 my-1" />
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Delete Shipment
-                          </button>
+                           <button
+                             onClick={() => {
+                               setSelectedShipment(item);
+                               setShowFinancialsModal(true);
+                               setActiveMenuId(null);
+                             }}
+                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                           >
+                             <CircleDollarSign className="w-4 h-4 text-orange-500" />
+                             Create Financials
+                           </button>
+                           <button
+                             onClick={() => {
+                               setSelectedShipment(item);
+                               setShowUploadModal(true);
+                               setActiveMenuId(null);
+                             }}
+                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                           >
+                             <FileUp className="w-4 h-4 text-purple-500" />
+                             Upload Document
+                           </button>
+                           <div className="h-px bg-gray-100 my-1" />
+                           <button
+                             onClick={() => handleDeleteClick(item)}
+                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                           >
+                             <Trash2 className="w-4 h-4" />
+                             Delete Shipment
+                           </button>
                         </div>
                       )}
                     </td>
@@ -298,7 +336,7 @@ const ShipmentTable = ({
                     />
                   </div>
 
-                  <div className="md:col-span-2 mt-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar space-y-3">
+                  <div className="md:col-span-2 mt-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide space-y-3">
                     <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-0.5">
                       Notes history
                     </h4>
@@ -387,6 +425,33 @@ const ShipmentTable = ({
           </div>
         </>
       )}
+
+       <DeleteConfirmationModal
+         isOpen={showDeleteModal}
+         onClose={() => setShowDeleteModal(false)}
+         onConfirm={confirmDelete}
+         airwayBillNumber={shipmentToDelete?.airwayBillNumber}
+         isDeleting={isDeleting}
+         color={color}
+       />
+
+       <CreateFinancialsModal
+         isOpen={showFinancialsModal}
+         onClose={() => setShowFinancialsModal(false)}
+         airlineId={airlineId}
+         shipmentId={selectedShipment?.id}
+         airwayBillNumber={selectedShipment?.airwayBillNumber}
+         color={color}
+       />
+
+       <UploadDocumentModal
+         isOpen={showUploadModal}
+         onClose={() => setShowUploadModal(false)}
+         airlineId={airlineId}
+         shipmentId={selectedShipment?.id}
+         airwayBillNumber={selectedShipment?.airwayBillNumber}
+         color={color}
+       />
 
       {/* Modal Animation Keyframes */}
       <style>{`

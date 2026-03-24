@@ -114,6 +114,9 @@ const LoginPage = () => {
             if (loginData.airlineId) {
               localStorage.setItem("airlineId", loginData.airlineId);
             }
+            if (loginData.userId) {
+              localStorage.setItem("userId", loginData.userId);
+            }
           }
 
           setTimeout(() => {
