@@ -1,10 +1,10 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import shipmentApi from '../api/shipment';
+import { useMutation, useQuery } from "@tanstack/react-query";
+import shipmentApi from "../api/shipment";
 
 // Hook to get shipments
 export const useGetShipments = (airlineId, params = {}, options = {}) => {
   return useQuery({
-    queryKey: ['shipments', airlineId, params],
+    queryKey: ["shipments", airlineId, params],
     queryFn: () => shipmentApi.getShipments(airlineId, params),
     enabled: !!airlineId,
     ...options,
@@ -14,14 +14,15 @@ export const useGetShipments = (airlineId, params = {}, options = {}) => {
 // Hook to create a shipment
 export const useCreateShipment = () => {
   return useMutation({
-    mutationFn: ({ airlineId, data }) => shipmentApi.createShipment(airlineId, data),
+    mutationFn: ({ airlineId, data }) =>
+      shipmentApi.createShipment(airlineId, data),
   });
 };
 
 // Hook to search shipments by AWB
 export const useSearchShipments = (airlineId, awbNumber, options = {}) => {
   return useQuery({
-    queryKey: ['shipments', 'search', airlineId, awbNumber],
+    queryKey: ["shipments", "search", airlineId, awbNumber],
     queryFn: () => shipmentApi.searchShipments(airlineId, awbNumber),
     enabled: !!airlineId && !!awbNumber,
     ...options,
@@ -31,7 +32,7 @@ export const useSearchShipments = (airlineId, awbNumber, options = {}) => {
 // Hook to get shipment by ID
 export const useGetShipmentById = (airlineId, id, options = {}) => {
   return useQuery({
-    queryKey: ['shipment', airlineId, id],
+    queryKey: ["shipment", airlineId, id],
     queryFn: () => shipmentApi.getShipmentById(airlineId, id),
     enabled: !!airlineId && !!id,
     ...options,
@@ -46,11 +47,11 @@ export const useAddShipmentNote = () => {
   });
 };
 
-
 // Hook to delete shipment
 export const useDeleteShipment = () => {
   return useMutation({
-    mutationFn: ({ airlineId, id }) => shipmentApi.deleteShipment(airlineId, id),
+    mutationFn: ({ airlineId, id }) =>
+      shipmentApi.deleteShipment(airlineId, id),
   });
 };
 
@@ -59,7 +60,7 @@ export const useDeleteShipment = () => {
 // Hook to get document by ID
 export const useGetDocumentById = (airlineId, shipmentId, id, options = {}) => {
   return useQuery({
-    queryKey: ['document', airlineId, shipmentId, id],
+    queryKey: ["document", airlineId, shipmentId, id],
     queryFn: () => shipmentApi.getDocumentById(airlineId, shipmentId, id),
     enabled: !!airlineId && !!shipmentId && !!id,
     ...options,
@@ -67,9 +68,14 @@ export const useGetDocumentById = (airlineId, shipmentId, id, options = {}) => {
 };
 
 // Hook to get all documents for a shipment
-export const useGetDocuments = (airlineId, shipmentId, params = {}, options = {}) => {
+export const useGetDocuments = (
+  airlineId,
+  shipmentId,
+  params = {},
+  options = {},
+) => {
   return useQuery({
-    queryKey: ['documents', airlineId, shipmentId, params],
+    queryKey: ["documents", airlineId, shipmentId, params],
     queryFn: () => shipmentApi.getDocuments(airlineId, shipmentId, params),
     enabled: !!airlineId && !!shipmentId,
     ...options,
@@ -105,7 +111,7 @@ export const useDeleteDocument = () => {
 // Hook to get financials for a shipment
 export const useGetFinancial = (airlineId, shipmentId, options = {}) => {
   return useQuery({
-    queryKey: ['financial', airlineId, shipmentId],
+    queryKey: ["financial", airlineId, shipmentId],
     queryFn: () => shipmentApi.getFinancial(airlineId, shipmentId),
     enabled: !!airlineId && !!shipmentId,
     ...options,

@@ -31,39 +31,55 @@ const StepIndicator = ({ num, active, label, icon: Icon }) => (
   </div>
 );
 
+const INITIAL_FORM_DATA = {
+  mawb: "",
+  dateOfIssue: new Date().toISOString().split("T")[0],
+  agentsOrClients: "",
+  product: "",
+  routing: "",
+  flightNo: "",
+  pieces: 0,
+  chargeableWeightKg: 0,
+  grossWeightKg: 0,
+  spotRate: 0,
+  publishedRates: 0,
+  roe: 1,
+  freightAmountNGN: 0,
+  ncaaCharges5Percent: 0,
+  totalChargeNGN: 0,
+  chargesCollect: 0,
+  fuelSurcharge: 0,
+  secSurcharge: 0,
+  handlingSurcharge: 0,
+  surchargeDueAgent: 0,
+  awbFee: 0,
+  gsaCommissionNGN: 0,
+  vatOnCommission: 0,
+  amtDueAirline: 0,
+  dueAPGInc: 0,
+  dueSLC: 0,
+};
+
 const CreateFinancialsModal = ({ isOpen, onClose, airlineId, shipmentId, airwayBillNumber, color }) => {
   const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const { mutate: createFinancial, isPending: isCreating } = useCreateFinancial();
 
   const [formData, setFormData] = useState({
+    ...INITIAL_FORM_DATA,
     mawb: airwayBillNumber || "",
-    dateOfIssue: new Date().toISOString().split("T")[0],
-    agentsOrClients: "",
-    product: "",
-    routing: "",
-    flightNo: "",
-    pieces: 0,
-    chargeableWeightKg: 0,
-    grossWeightKg: 0,
-    spotRate: 0,
-    publishedRates: 0,
-    roe: 1,
-    freightAmountNGN: 0,
-    ncaaCharges5Percent: 0,
-    totalChargeNGN: 0,
-    chargesCollect: 0,
-    fuelSurcharge: 0,
-    secSurcharge: 0,
-    handlingSurcharge: 0,
-    surchargeDueAgent: 0,
-    awbFee: 0,
-    gsaCommissionNGN: 0,
-    vatOnCommission: 0,
-    amtDueAirline: 0,
-    dueAPGInc: 0,
-    dueSLC: 0,
   });
+
+  // Reset form when modal opens or shipment changes
+  React.useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        ...INITIAL_FORM_DATA,
+        mawb: airwayBillNumber || "",
+      });
+      setStep(1);
+    }
+  }, [isOpen, airwayBillNumber]);
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;
@@ -92,8 +108,14 @@ const CreateFinancialsModal = ({ isOpen, onClose, airlineId, shipmentId, airwayB
       {
         onSuccess: () => {
           toast.success("Financial records created successfully");
+          queryClient.invalidateQueries(["financial", airlineId]);
           queryClient.invalidateQueries(["financial", airlineId, shipmentId]);
           onClose();
+          // Reset form state
+          setFormData({
+            ...INITIAL_FORM_DATA,
+            mawb: airwayBillNumber || "",
+          });
           setStep(1);
         },
         onError: (err) => {

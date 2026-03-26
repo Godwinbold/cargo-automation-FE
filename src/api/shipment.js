@@ -47,7 +47,6 @@ export const shipmentApi = {
     return response.data;
   },
 
-
   // Delete a shipment
   deleteShipment: async (airlineId, id) => {
     const response = await axiosInstance.delete(

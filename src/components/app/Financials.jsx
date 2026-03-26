@@ -1,110 +1,102 @@
-// export default Financials;
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import HeaderTitle from "./HeaderTitle";
-import Create from "./Create";
 import FinancialTable from "./FinacialTable";
+import { useGetFinancial } from "../../hooks/useShipment";
+import { GetFromLocalStorage } from "../../utils/getFromLocals";
+import { useSearchParams } from "react-router-dom";
+import ShipmentFilters from "./ShipmentFilters";
 
 const Financials = ({ color, name }) => {
-  // Lift data state from FinancialTable to parent for shared control
-  const [data, setData] = useState([]);
+  const [searchParams] = useSearchParams();
+  const airlineIdFromQuery = searchParams.get("airlineId");
+  const airlineId = GetFromLocalStorage("airlineId") || airlineIdFromQuery;
 
-  // Helper to check if table data is "empty"
-  const isTableEmpty = React.useMemo(() => {
-    if (data.length === 0) return true;
-    return data.every((row) =>
-      Object.values(row).every((value) => value.trim() === "")
-    );
-  }, [data]);
+  // Filtering and Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
 
-  // Handler for "Add Financials" button click: initialize with 5 empty rows
-  const handleAddFinancials = () => {
-    // Generate rowKeys same as in FinancialTable (you may want to extract this to a shared util)
-    const headers = [
-      "S/N",
-      "MAWB",
-      "DATE OF ISSUES",
-      "AGENTS/CLIENTS",
-      "PRODUCT",
-      "ROUTING",
-      "FLIGHT NO",
-      "PIECES",
-      "CHARGEABLE WEIGHT (KG)",
-      "GROSS WEIGHT (KG)",
-      "SPOT RATE",
-      "PUBLISHED RATES",
-      "ROE",
-      "FREIGHT AMOUNT (NGN)",
-      "NCAA CHARGES 5%",
-      "TOTAL CHARGE (NGN)",
-      "CHARGES COLLECT",
-      "FUEL SURCHARGE",
-      "SEC SURCHARGE",
-      "HANDLING SURCHARGE",
-      "DUE APG INC",
-      "DUE SLC",
-      "SURCHARGE DUE AGENT",
-      "AWB FEE",
-      "GSA COMMISSION (NGN)",
-      "7.5%VAT ON COMMISSION",
-      "AMT DUE AIRLINE",
-      "DUE APG INC",
-      "DUE SLC",
-    ];
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
-    const rowKeys = [];
-    const seen = new Set();
-    headers.forEach((header) => {
-      let key = header;
-      let counter = 1;
-      while (seen.has(key)) {
-        key = `${header} ${counter}`;
-        counter++;
-      }
-      seen.add(key);
-      rowKeys.push(key);
-    });
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, dateFilter, pageSize]);
 
-    const initialRows = Array.from({ length: 5 }, () =>
-      rowKeys.reduce((acc, key) => ({ ...acc, [key]: "" }), {})
-    );
-    setData(initialRows);
-  };
+  const {
+    data: financials,
+    isLoading,
+    error,
+  } = useGetFinancial(airlineId, {
+    page: currentPage,
+    pageSize: pageSize,
+    mawbSearch: debouncedSearch,
+    date: dateFilter,
+  });
 
-  // Handler to clear all data (e.g., from a "Clear" button in table, if added)
-  const handleClearAll = () => {
-    setData([]);
-  };
-
-  // Update handler passed to FinancialTable
-  const handleUpdateCell = (rowIndex, colIndex, value) => {
-    // You'll need to pass rowKeys to FinancialTable or regenerate here
-    // For brevity, assuming FinancialTable handles its own keys; adjust as needed
-    // In practice, extract rowKeys to a constant outside
-    setData((prevData) => {
-      const newData = [...prevData];
-      // Assuming colIndex maps directly; use rowKeys in FinancialTable
-      const key = rowKeys[colIndex]; // rowKeys defined above
-      newData[rowIndex] = { ...newData[rowIndex], [key]: value };
-      return newData;
-    });
-  };
-
-  const [createNow, setCreateNow] = useState(false);
-
-  const handleCreateNow = () => {
-    setCreateNow(true);
-  };
+  const totalPages =
+    financials?.data?.totalPages ||
+    Math.ceil((financials?.data?.totalCount || 0) / pageSize);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] p-1 md:p-4">
-      <div className="flex-none">
+    <div className="flex flex-col p-4 min-h-screen">
+      <div className="flex-none flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <HeaderTitle
           title="Financials"
           description="Access shipment billing, airline settlements, and financial summaries, all in one place."
         />
       </div>
-      <div className="flex-1 overflow-x-auto px-2">
-        <FinancialTable />
+
+      <div className="flex-none px-2 mb-2">
+        <ShipmentFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          dateFilter={dateFilter}
+          onDateChange={setDateFilter}
+          color={color}
+        />
+      </div>
+
+      <div className="flex-1 px-2 scrollbar-hide overflow-hidden">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-500">Loading financials...</p>
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center bg-red-50 text-red-600 rounded-xl border border-red-100 italic">
+            Error loading financials. Please try again.
+          </div>
+        ) : financials?.data?.items?.length > 0 ? (
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-auto">
+              <FinancialTable
+                color={color}
+                data={financials.data.items}
+                airlineId={airlineId}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-8 p-12 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+            <p className="text-gray-500 font-medium">
+              No financial records found.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -11,7 +11,6 @@ const CreateShipmentModal = ({ isOpen, onClose, airlineId, color }) => {
     airwayBillNumber: "",
     status: "Booked",
     date: "",
-    note: "",
   });
 
   const statusOptions = ["Accepted", "Booked", "Delivered", "Flown"];
@@ -45,11 +44,12 @@ const CreateShipmentModal = ({ isOpen, onClose, airlineId, color }) => {
             airwayBillNumber: "",
             status: "Booked",
             date: "",
-            note: "",
           });
         },
         onError: (error) => {
-          toast.error(error.response?.data?.message || "Failed to create shipment");
+          toast.error(
+            error.response?.data?.message || "Failed to create shipment",
+          );
         },
       },
     );
@@ -130,7 +130,7 @@ const CreateShipmentModal = ({ isOpen, onClose, airlineId, color }) => {
               />
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Note
               </label>
@@ -143,7 +143,7 @@ const CreateShipmentModal = ({ isOpen, onClose, airlineId, color }) => {
                 rows={3}
                 placeholder="Optional note"
               />
-            </div>
+            </div> */}
           </div>
 
           <div className="flex justify-end gap-3 mt-8">
@@ -155,7 +155,9 @@ const CreateShipmentModal = ({ isOpen, onClose, airlineId, color }) => {
             </button>
             <button
               onClick={handleCreateShipment}
-              disabled={!newShipment.airwayBillNumber || !newShipment.date || isCreating}
+              disabled={
+                !newShipment.airwayBillNumber || !newShipment.date || isCreating
+              }
               style={{ backgroundColor: color }}
               className="px-5 py-2 text-white rounded-lg transition disabled:cursor-not-allowed disabled:opacity-50"
             >
