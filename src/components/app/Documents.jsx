@@ -23,7 +23,8 @@ const Documents = ({ color, name }) => {
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Upload Modal
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -51,7 +52,7 @@ const Documents = ({ color, name }) => {
   // Reset page on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, dateFilter, pageSize]);
+  }, [debouncedSearch, startDate, endDate, pageSize]);
 
   const {
     data: documents,
@@ -61,7 +62,8 @@ const Documents = ({ color, name }) => {
     page: currentPage,
     pageSize,
     search: debouncedSearch,
-    date: dateFilter,
+    startDate,
+    endDate,
   });
 
   // Normalize API shape: { data: items[] } or { data: { items[], totalPages } }
@@ -147,8 +149,10 @@ const Documents = ({ color, name }) => {
         <ShipmentFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          dateFilter={dateFilter}
-          onDateChange={setDateFilter}
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
           color={color}
         />
       </div>

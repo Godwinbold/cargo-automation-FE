@@ -51,7 +51,7 @@ const DashboardLayout = ({ color, name }) => {
 
         {/* Scrollable Main Content - Add padding top for fixed header */}
         <main className="flex-1 bg-gray-50 pt-[73px]">
-          <div className="px-4 py-6 md:px-8">
+          <div className=" py-6 md:px-8">
             <Outlet />
           </div>
         </main>

@@ -101,7 +101,7 @@ const CargoUnitSummary = ({ isLoading, data = [] }) => {
                   </td>
                   <td className="py-4 px-4 text-[#525252] text-sm border-b border-gray-50 group-last:border-0">
                     {item.totalAmount !== undefined
-                      ? `$${item.totalAmount.toLocaleString()}`
+                      ? `₦${item.totalAmount.toLocaleString()}`
                       : item.amount || "-"}
                   </td>
                 </tr>

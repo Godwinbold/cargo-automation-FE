@@ -21,7 +21,8 @@ const Financials = ({ color, name }) => {
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Edit/View Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -90,7 +91,7 @@ const Financials = ({ color, name }) => {
   // Reset to first page when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, dateFilter, pageSize]);
+  }, [debouncedSearch, startDate, endDate, pageSize]);
 
   const {
     data: financials,
@@ -100,7 +101,8 @@ const Financials = ({ color, name }) => {
     page: currentPage,
     pageSize: pageSize,
     mawbSearch: debouncedSearch,
-    date: dateFilter,
+    startDate,
+    endDate,
   });
 
   // Support both { data: items[] } and { data: { items: [], totalPages: 0 } } formats
@@ -124,8 +126,10 @@ const Financials = ({ color, name }) => {
         <ShipmentFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          dateFilter={dateFilter}
-          onDateChange={setDateFilter}
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
           color={color}
         />
       </div>
