@@ -31,6 +31,8 @@ const StepIndicator = ({ num, active, label, icon: Icon }) => (
   </div>
 );
 
+// Numeric fields stored as strings so controlled inputs can be cleared/retyped
+// freely without React snapping them back to 0. Converted to numbers on submit.
 const INITIAL_FORM_DATA = {
   mawb: "",
   dateOfIssue: new Date().toISOString().split("T")[0],
@@ -38,26 +40,26 @@ const INITIAL_FORM_DATA = {
   product: "",
   routing: "",
   flightNo: "",
-  pieces: 0,
-  chargeableWeightKg: 0,
-  grossWeightKg: 0,
-  spotRate: 0,
-  publishedRates: 0,
-  roe: 1,
-  freightAmountNGN: 0,
-  ncaaCharges5Percent: 0,
-  totalChargeNGN: 0,
-  chargesCollect: 0,
-  fuelSurcharge: 0,
-  secSurcharge: 0,
-  handlingSurcharge: 0,
-  surchargeDueAgent: 0,
-  awbFee: 0,
-  gsaCommissionNGN: 0,
-  vatOnCommission: 0,
-  amtDueAirline: 0,
-  dueAPGInc: 0,
-  dueSLC: 0,
+  pieces: "",
+  chargeableWeightKg: "",
+  grossWeightKg: "",
+  spotRate: "",
+  publishedRates: "",
+  roe: "",
+  freightAmountNGN: "",
+  ncaaCharges5Percent: "",
+  totalChargeNGN: "",
+  chargesCollect: "",
+  fuelSurcharge: "",
+  secSurcharge: "",
+  handlingSurcharge: "",
+  surchargeDueAgent: "",
+  awbFee: "",
+  gsaCommissionNGN: "",
+  vatOnCommission: "",
+  amtDueAirline: "",
+  dueAPGInc: "",
+  dueSLC: "",
 };
 
 const CreateFinancialsModal = ({ isOpen, onClose, airlineId, shipmentId, airwayBillNumber, color }) => {
@@ -82,11 +84,16 @@ const CreateFinancialsModal = ({ isOpen, onClose, airlineId, shipmentId, airwayB
   }, [isOpen, airwayBillNumber]);
 
   const handleChange = (e) => {
-    const { name, value, type } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "number" ? parseFloat(value) || 0 : value,
-    }));
+    const { name, value } = e.target;
+    // Store raw string for all fields — numeric conversion happens at submit time.
+    // This prevents the controlled-input reset loop where clearing a number field
+    // triggers parseFloat("") = NaN → 0, which React then forces back into the input.
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const toNum = (v) => {
+    const n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
   };
 
   const nextStep = () => {
@@ -98,9 +105,34 @@ const CreateFinancialsModal = ({ isOpen, onClose, airlineId, shipmentId, airwayB
   };
 
   const handleSubmit = () => {
+    // Only send the 26 fields the backend expects — convert strings to numbers here.
     const payload = {
-      ...formData,
+      mawb: formData.mawb,
       dateOfIssue: new Date(formData.dateOfIssue).toISOString(),
+      agentsOrClients: formData.agentsOrClients,
+      product: formData.product,
+      routing: formData.routing,
+      flightNo: formData.flightNo,
+      pieces: toNum(formData.pieces),
+      chargeableWeightKg: toNum(formData.chargeableWeightKg),
+      grossWeightKg: toNum(formData.grossWeightKg),
+      spotRate: toNum(formData.spotRate),
+      publishedRates: toNum(formData.publishedRates),
+      roe: toNum(formData.roe),
+      freightAmountNGN: toNum(formData.freightAmountNGN),
+      ncaaCharges5Percent: toNum(formData.ncaaCharges5Percent),
+      totalChargeNGN: toNum(formData.totalChargeNGN),
+      chargesCollect: toNum(formData.chargesCollect),
+      fuelSurcharge: toNum(formData.fuelSurcharge),
+      secSurcharge: toNum(formData.secSurcharge),
+      handlingSurcharge: toNum(formData.handlingSurcharge),
+      surchargeDueAgent: toNum(formData.surchargeDueAgent),
+      awbFee: toNum(formData.awbFee),
+      gsaCommissionNGN: toNum(formData.gsaCommissionNGN),
+      vatOnCommission: toNum(formData.vatOnCommission),
+      amtDueAirline: toNum(formData.amtDueAirline),
+      dueAPGInc: toNum(formData.dueAPGInc),
+      dueSLC: toNum(formData.dueSLC),
     };
 
     createFinancial(

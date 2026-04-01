@@ -1,7 +1,16 @@
-import React from "react";
+import { useState } from "react";
 import { Calendar, ChevronDown } from "lucide-react";
 
-const ShipmentFilter = () => {
+const ShipmentFilter = ({ setFilters }) => {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  const handleApply = () => {
+    if (setFilters) {
+      setFilters({ startDate, endDate });
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-[#D3EBF8] p-6 mt-8">
       <div className="mb-6">
@@ -23,6 +32,8 @@ const ShipmentFilter = () => {
           <div className="relative">
             <input
               type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
               className="w-full pl-4 pr-10 py-3 bg-white border border-gray-200 rounded-lg text-[#1A1A1A] placeholder-gray-400 focus:outline-none focus:border-[#3DA5E0] transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               onClick={(e) => e.target.showPicker()}
             />
@@ -38,6 +49,8 @@ const ShipmentFilter = () => {
           <div className="relative">
             <input
               type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
               className="w-full pl-4 pr-10 py-3 bg-white border border-gray-200 rounded-lg text-[#1A1A1A] placeholder-gray-400 focus:outline-none focus:border-[#3DA5E0] transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               onClick={(e) => e.target.showPicker()}
             />
@@ -45,7 +58,7 @@ const ShipmentFilter = () => {
           </div>
         </div>
 
-        {/* Airline Select */}
+        {/* Airline Select
         <div className="w-full lg:w-[40%]">
           <div className="relative">
             <select className="w-full pl-4 pr-10 py-3 bg-white border border-gray-200 rounded-lg text-[#1A1A1A] appearance-none focus:outline-none focus:border-[#3DA5E0] transition-colors cursor-pointer">
@@ -57,11 +70,14 @@ const ShipmentFilter = () => {
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
           </div>
-        </div>
+        </div> */}
 
         {/* Apply Button */}
         <div className="w-full lg:w-auto">
-          <button className="w-full lg:w-auto whitespace-nowrap py-3 px-8 rounded-lg text-white font-semibold shadow-sm hover:opacity-90 transition-opacity bg-[#3DA5E0]">
+          <button 
+            onClick={handleApply}
+            className="w-full lg:w-auto whitespace-nowrap py-3 px-8 rounded-lg text-white font-semibold shadow-sm hover:opacity-90 transition-opacity bg-[#3DA5E0]"
+          >
             Apply Filter
           </button>
         </div>

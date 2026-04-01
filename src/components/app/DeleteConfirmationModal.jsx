@@ -1,7 +1,16 @@
 import React from "react";
 import { AlertTriangle, X, Trash2 } from "lucide-react";
 
-const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, airwayBillNumber, isDeleting, color }) => {
+const DeleteConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = "Delete Shipment",
+  message = "Are you sure you want to delete this record?",
+  identifier = "",
+  isDeleting,
+  color,
+}) => {
   if (!isOpen) return null;
 
   return (
@@ -27,9 +36,18 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, airwayBillNumber,
               <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4 ring-8 ring-red-50/50">
                 <AlertTriangle className="w-8 h-8 text-red-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Shipment</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                {title}
+              </h3>
               <p className="text-gray-500 text-sm px-4">
-                Are you sure you want to delete shipment <span className="font-semibold text-gray-900">{airwayBillNumber}</span>? This action cannot be undone and all associated data will be permanently removed.
+                {message}{" "}
+                {identifier && (
+                  <span className="font-semibold text-gray-900">
+                    {identifier}
+                  </span>
+                )}
+                ? This action cannot be undone and all associated data will be
+                permanently removed.
               </p>
             </div>
           </div>

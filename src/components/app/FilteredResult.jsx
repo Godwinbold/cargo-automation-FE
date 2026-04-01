@@ -1,11 +1,28 @@
 import React from "react";
 import { Plane, DollarSign, Weight, ArrowUp, ArrowDown } from "lucide-react";
 
-const FilteredResult = () => {
+const FilteredResult = ({ isLoading, data }) => {
+  const resultData = data || {
+    totalShipments: 0,
+    totalRevenue: 0,
+    averageWeightKg: 0,
+  };
+
+  const formatRevenue = (amount = 0) => {
+    if (amount >= 1000000) return `N${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `N${(amount / 1000).toFixed(1)}K`;
+    return `N${amount.toLocaleString()}`;
+  };
+
+  const formatWeight = (kg = 0) => {
+    if (kg >= 1000) return `${(kg / 1000).toFixed(1)} tons`;
+    return `${kg.toLocaleString()} kg`;
+  };
+
   const stats = [
     {
       title: "Total Shipments",
-      value: "1,243",
+      value: isLoading ? "..." : (resultData.totalShipments || 0).toLocaleString(),
       change: "+12.5% from last month",
       isPositive: true,
       icon: Plane,
@@ -14,7 +31,7 @@ const FilteredResult = () => {
     },
     {
       title: "Total Revenue",
-      value: "N24.8M",
+      value: isLoading ? "..." : formatRevenue(resultData.totalRevenue || 0),
       change: "+8.2% from last month",
       isPositive: true,
       icon: DollarSign,
@@ -23,7 +40,7 @@ const FilteredResult = () => {
     },
     {
       title: "Average Weight",
-      value: "2.4 tons",
+      value: isLoading ? "..." : formatWeight(resultData.averageWeightKg || 0),
       change: "-8.2% from last month",
       isPositive: false,
       icon: Weight,

@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useLoginAirlineUser } from "../../hooks/useAuth";
+import { useGetAllAirlines } from "../../hooks/useGeneral";
+import { toast } from "sonner";
+import { SaveToLocalStorage } from "../../utils/getFromLocals";
 
 const ExecutiveLogin = () => {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const urlAirlineId = searchParams.get("airlineId");
+
+  const [formData, setFormData] = useState({ email: "", password: "", airlineId: urlAirlineId || "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState({ email: "", password: "" });
-  const [touched, setTouched] = useState({ email: false, password: false });
-  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({ email: "", password: "", airlineId: "" });
+  const [touched, setTouched] = useState({ email: false, password: false, airlineId: false });
+  const { mutate: loginUser, isPending: isLoading } = useLoginAirlineUser();
+  const { data: airlinesData, isLoading: isLoadingAirlines } = useGetAllAirlines();
+  const airlines = airlinesData?.data || [];
 
   // Validate single field
   const validateField = (name, value) => {
@@ -24,6 +34,10 @@ const ExecutiveLogin = () => {
         error = "Password must be at least 8 characters";
     }
 
+    if (name === "airlineId" && !urlAirlineId) {
+      if (!value) error = "Airline is required";
+    }
+
     return error;
   };
 
@@ -31,8 +45,9 @@ const ExecutiveLogin = () => {
   const validateForm = () => {
     const emailError = validateField("email", formData.email);
     const passwordError = validateField("password", formData.password);
+    const airlineError = !urlAirlineId ? validateField("airlineId", formData.airlineId) : "";
 
-    const newErrors = { email: emailError, password: passwordError };
+    const newErrors = { email: emailError, password: passwordError, airlineId: airlineError };
     setErrors(newErrors);
     return newErrors;
   };
@@ -64,7 +79,7 @@ const ExecutiveLogin = () => {
     e.preventDefault();
 
     // Mark all fields as touched
-    setTouched({ email: true, password: true });
+    setTouched({ email: true, password: true, airlineId: true });
 
     // Validate everything
     const currentErrors = validateForm();
@@ -75,17 +90,51 @@ const ExecutiveLogin = () => {
       return; // Stop submission
     }
 
-    // Simulate login success
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      window.location.href = "/executive-dashboard";
-    }, 1200);
+    const targetAirlineId = urlAirlineId || formData.airlineId;
+
+    if (!targetAirlineId) {
+      toast.error("Airline ID missing.");
+      return;
+    }
+
+    loginUser(
+      { airlineId: targetAirlineId, credentials: { email: formData.email, password: formData.password } },
+      {
+        onSuccess: (response) => {
+          toast.success("Login successful!");
+          const loginData = response?.data;
+          
+          if (loginData?.token) {
+            SaveToLocalStorage("access_token", loginData.token);
+          }
+          if (loginData) {
+            SaveToLocalStorage("user", loginData);
+            if (loginData.airlineId) {
+              localStorage.setItem("airlineId", loginData.airlineId);
+            }
+            if (loginData.userId) {
+              localStorage.setItem("userId", loginData.userId);
+            }
+          }
+
+          setTimeout(() => {
+            navigate(targetAirlineId ? `/executive-dashboard?airlineId=${targetAirlineId}` : "/executive-dashboard");
+          }, 1000);
+        },
+        onError: (error) => {
+          const message =
+            error.response?.data?.errors?.[0]?.message ||
+            error.response?.data?.message ||
+            "Invalid credentials";
+          toast.error(message);
+        },
+      }
+    );
   };
 
   // Optional: Disable button if form is invalid or empty
   const isFormValid =
-    formData.email && formData.password && !errors.email && !errors.password;
+    formData.email && formData.password && (!urlAirlineId ? formData.airlineId : true) && !errors.email && !errors.password && !errors.airlineId;
 
   return (
     <div className="flex items-center bg-[url('/images/loginbg.png')] bg-cover bg-center justify-center h-screen">
@@ -128,6 +177,37 @@ const ExecutiveLogin = () => {
               <p className="mt-1 text-xs text-red-600">{errors.email}</p>
             )}
           </div>
+
+          {/* Airline Select (if not in URL) */}
+          {!urlAirlineId && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Select Airline
+              </label>
+              <select
+                name="airlineId"
+                value={formData.airlineId}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                disabled={isLoadingAirlines}
+                className={`w-full px-3 h-[48px] border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                  errors.airlineId && touched.airlineId
+                    ? "border-red-500 focus:ring-red-500"
+                    : "border-gray-300 focus:ring-[var(--primary-color)]"
+                }`}
+              >
+                <option value="">Select Airline</option>
+                {airlines.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.airlineName}
+                  </option>
+                ))}
+              </select>
+              {errors.airlineId && touched.airlineId && (
+                <p className="mt-1 text-xs text-red-600">{errors.airlineId}</p>
+              )}
+            </div>
+          )}
 
           {/* Password Field */}
           <div>

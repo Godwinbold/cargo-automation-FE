@@ -36,7 +36,7 @@ const DashboardLayout = ({ color, name }) => {
       )}
 
       {/* ==================== MAIN CONTENT AREA ==================== */}
-      <div className="flex-1 flex flex-col min-h-screen md:ml-64">
+      <div className="flex-1 flex flex-col min-h-screen md:ml-64 overflow-x-hidden min-w-0">
         {/* Header - Fixed on top */}
         <header
           className={`fixed top-0 right-0 z-20 bg-white border-b border-gray-200 transition-all duration-300 ${

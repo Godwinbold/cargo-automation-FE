@@ -29,6 +29,26 @@ export const useSearchShipments = (airlineId, awbNumber, options = {}) => {
   });
 };
 
+// Hook to filter shipments
+export const useFilterShipments = (airlineId, params = {}, options = {}) => {
+  return useQuery({
+    queryKey: ["shipments", "filter", airlineId, params],
+    queryFn: () => shipmentApi.filterShipments(airlineId, params),
+    enabled: !!airlineId,
+    ...options,
+  });
+};
+
+// Hook to get shipments by status
+export const useGetShipmentsByStatus = (airlineId, params = {}, options = {}) => {
+  return useQuery({
+    queryKey: ["shipments", "status", airlineId, params],
+    queryFn: () => shipmentApi.getShipmentsByStatus(airlineId, params),
+    enabled: !!airlineId,
+    ...options,
+  });
+};
+
 // Hook to get shipment by ID
 export const useGetShipmentById = (airlineId, id, options = {}) => {
   return useQuery({
@@ -106,6 +126,16 @@ export const useDeleteDocument = () => {
   });
 };
 
+// Hook to get all documents for an airline
+export const useGetDocumentsForAirline = (airlineId, params = {}, options = {}) => {
+  return useQuery({
+    queryKey: ["documents", "airline", airlineId, params],
+    queryFn: () => shipmentApi.getDocumentsForAirline(airlineId, params),
+    enabled: !!airlineId,
+    ...options,
+  });
+};
+
 // --- Financial Hooks ---
 
 // Hook to get financials for a shipment
@@ -142,6 +172,16 @@ export const useDeleteFinancial = () => {
   });
 };
 
+// Hook to get all financials for an airline
+export const useGetAirlinesFinancials = (airlineId, params = {}, options = {}) => {
+  return useQuery({
+    queryKey: ["financials", "airline", airlineId, params],
+    queryFn: () => shipmentApi.getAirlinesFinancials(airlineId, params),
+    enabled: !!airlineId,
+    ...options,
+  });
+};
+
 // Group hook
 export const useShipment = () => {
   return {
@@ -160,6 +200,10 @@ export const useShipment = () => {
     useCreateFinancial,
     useUpdateFinancial,
     useDeleteFinancial,
+    useFilterShipments,
+    useGetShipmentsByStatus,
+    useGetDocumentsForAirline,
+    useGetAirlinesFinancials,
   };
 };
 
