@@ -22,7 +22,8 @@ const ManageShipping = ({ color, name }) => {
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Debounce search query
   useEffect(() => {
@@ -35,7 +36,7 @@ const ManageShipping = ({ color, name }) => {
   // Reset to first page when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, dateFilter, pageSize]);
+  }, [debouncedSearch, startDate, endDate, pageSize]);
 
   // The hook is already enabled only when airlineId is truthy
   const {
@@ -46,6 +47,8 @@ const ManageShipping = ({ color, name }) => {
     page: currentPage,
     pageSize: pageSize,
     awbSearch: debouncedSearch,
+    startDate,
+    endDate,
   });
 
   const handleCreateShipment = () => {
@@ -80,8 +83,10 @@ const ManageShipping = ({ color, name }) => {
         <ShipmentFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          dateFilter={dateFilter}
-          onDateChange={setDateFilter}
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
           color={color}
         />
       </div>
@@ -115,14 +120,14 @@ const ManageShipping = ({ color, name }) => {
             <Create
               btnAction="Shipping"
               description={
-                searchQuery || dateFilter
+                searchQuery || startDate || endDate
                   ? "No shipments match your current filters."
                   : "Get started by creating a shipment."
               }
               icon={name ? `${name}-ms.png` : "rwanda-ms.png"}
               key="shipping"
               title={
-                searchQuery || dateFilter
+                searchQuery || startDate || endDate
                   ? "No Match Found"
                   : "No Shipping Data"
               }

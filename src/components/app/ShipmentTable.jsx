@@ -2,11 +2,16 @@ import React, { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Pagination from "./Pagination";
+import { useAddShipmentNote, useDeleteShipment } from "../../hooks/useShipment";
 import {
-  useAddShipmentNote,
-  useDeleteShipment,
-} from "../../hooks/useShipment";
-import { MoreHorizontal, Eye, MessageSquarePlus, Trash2, CircleDollarSign, FileUp } from "lucide-react";
+  MoreHorizontal,
+  Eye,
+  MessageSquarePlus,
+  Trash2,
+  CircleDollarSign,
+  FileUp,
+  MoreVertical,
+} from "lucide-react";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import CreateFinancialsModal from "./CreateFinancialsModal";
 import UploadDocumentModal from "./UploadDocumentModal";
@@ -23,8 +28,10 @@ const ShipmentTable = ({
   onPageSizeChange,
 }) => {
   const queryClient = useQueryClient();
-  const { mutate: addNoteMutation, isLoading: isSavingNote } = useAddShipmentNote();
-  const { mutate: deleteShipmentMutation, isPending: isDeleting } = useDeleteShipment();
+  const { mutate: addNoteMutation, isLoading: isSavingNote } =
+    useAddShipmentNote();
+  const { mutate: deleteShipmentMutation, isPending: isDeleting } =
+    useDeleteShipment();
 
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // "add", "edit", "view"
@@ -172,6 +179,9 @@ const ShipmentTable = ({
                 <th className="border-b border-gray-300 px-4 py-3 text-left">
                   Date
                 </th>
+                {/* <th className="border-b border-gray-300 px-4 py-3 text-left">
+                  Note
+                </th> */}
                 <th className="border-b border-gray-300 px-4 py-3 text-left">
                   Action
                 </th>
@@ -195,15 +205,20 @@ const ShipmentTable = ({
                         ? new Date(item.shipmentDate).toLocaleDateString()
                         : item.date}
                     </td>
+                    {/* <td className="border-b truncate max-w-xs border-gray-300 px-4 py-3">
+                      {item.notes?.length > 0 ? item.notes[0].content : ""}
+                    </td> */}
                     <td className="border-b border-gray-300 px-4 py-3 relative">
                       <button
                         onClick={() =>
-                          setActiveMenuId(activeMenuId === item.id ? null : item.id)
+                          setActiveMenuId(
+                            activeMenuId === item.id ? null : item.id,
+                          )
                         }
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                         aria-label="Actions"
                       >
-                        <MoreHorizontal className="w-5 h-5 text-gray-500" />
+                        <MoreVertical className="w-5 h-5 text-gray-500" />
                       </button>
 
                       {activeMenuId === item.id && (
@@ -225,36 +240,36 @@ const ShipmentTable = ({
                             <MessageSquarePlus className="w-4 h-4 text-green-500" />
                             Add Note
                           </button>
-                           <button
-                             onClick={() => {
-                               setSelectedShipment(item);
-                               setShowFinancialsModal(true);
-                               setActiveMenuId(null);
-                             }}
-                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                           >
-                             <CircleDollarSign className="w-4 h-4 text-orange-500" />
-                             Create Financials
-                           </button>
-                           <button
-                             onClick={() => {
-                               setSelectedShipment(item);
-                               setShowUploadModal(true);
-                               setActiveMenuId(null);
-                             }}
-                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                           >
-                             <FileUp className="w-4 h-4 text-purple-500" />
-                             Upload Document
-                           </button>
-                           <div className="h-px bg-gray-100 my-1" />
-                           <button
-                             onClick={() => handleDeleteClick(item)}
-                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                           >
-                             <Trash2 className="w-4 h-4" />
-                             Delete Shipment
-                           </button>
+                          <button
+                            onClick={() => {
+                              setSelectedShipment(item);
+                              setShowFinancialsModal(true);
+                              setActiveMenuId(null);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <CircleDollarSign className="w-4 h-4 text-orange-500" />
+                            Create Financials
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedShipment(item);
+                              setShowUploadModal(true);
+                              setActiveMenuId(null);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <FileUp className="w-4 h-4 text-purple-500" />
+                            Upload Document
+                          </button>
+                          <div className="h-px bg-gray-100 my-1" />
+                          <button
+                            onClick={() => handleDeleteClick(item)}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete Shipment
+                          </button>
                         </div>
                       )}
                     </td>
@@ -301,8 +316,14 @@ const ShipmentTable = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <DetailItem label="Shipment ID" value={currentRow?.id} />
-                    <DetailItem label="Airline ID" value={currentRow?.airlineId} />
-                    <DetailItem label="Airway Bill" value={currentRow?.airwayBillNumber} />
+                    <DetailItem
+                      label="Airline ID"
+                      value={currentRow?.airlineId}
+                    />
+                    <DetailItem
+                      label="Airway Bill"
+                      value={currentRow?.airwayBillNumber}
+                    />
                   </div>
                   <div className="space-y-3">
                     <DetailItem
@@ -393,7 +414,6 @@ const ShipmentTable = ({
                 </div>
               )}
 
-
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   onClick={closeModal}
@@ -404,9 +424,7 @@ const ShipmentTable = ({
                 {modalMode !== "view" && (
                   <button
                     onClick={saveNote}
-                    disabled={
-                      !newNote.trim() || isSavingNote
-                    }
+                    disabled={!newNote.trim() || isSavingNote}
                     style={{ backgroundColor: color }}
                     className="px-5 py-2 text-white rounded-lg transition disabled:cursor-not-allowed disabled:opacity-50 min-w-[120px]"
                   >
@@ -426,32 +444,32 @@ const ShipmentTable = ({
         </>
       )}
 
-       <DeleteConfirmationModal
-         isOpen={showDeleteModal}
-         onClose={() => setShowDeleteModal(false)}
-         onConfirm={confirmDelete}
-         airwayBillNumber={shipmentToDelete?.airwayBillNumber}
-         isDeleting={isDeleting}
-         color={color}
-       />
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        airwayBillNumber={shipmentToDelete?.airwayBillNumber}
+        isDeleting={isDeleting}
+        color={color}
+      />
 
-       <CreateFinancialsModal
-         isOpen={showFinancialsModal}
-         onClose={() => setShowFinancialsModal(false)}
-         airlineId={airlineId}
-         shipmentId={selectedShipment?.id}
-         airwayBillNumber={selectedShipment?.airwayBillNumber}
-         color={color}
-       />
+      <CreateFinancialsModal
+        isOpen={showFinancialsModal}
+        onClose={() => setShowFinancialsModal(false)}
+        airlineId={airlineId}
+        shipmentId={selectedShipment?.id}
+        airwayBillNumber={selectedShipment?.airwayBillNumber}
+        color={color}
+      />
 
-       <UploadDocumentModal
-         isOpen={showUploadModal}
-         onClose={() => setShowUploadModal(false)}
-         airlineId={airlineId}
-         shipmentId={selectedShipment?.id}
-         airwayBillNumber={selectedShipment?.airwayBillNumber}
-         color={color}
-       />
+      <UploadDocumentModal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        airlineId={airlineId}
+        shipmentId={selectedShipment?.id}
+        airwayBillNumber={selectedShipment?.airwayBillNumber}
+        color={color}
+      />
 
       {/* Modal Animation Keyframes */}
       <style>{`

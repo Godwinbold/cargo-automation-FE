@@ -1,111 +1,195 @@
-// export default Financials;
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import HeaderTitle from "./HeaderTitle";
-import Create from "./Create";
 import FinancialTable from "./FinacialTable";
+import { useGetAirlinesFinancials, useDeleteFinancial } from "../../hooks/useShipment";
+import { GetFromLocalStorage } from "../../utils/getFromLocals";
+import { useSearchParams } from "react-router-dom";
+import ShipmentFilters from "./ShipmentFilters";
+import EditFinancialsModal from "./EditFinancialsModal";
+import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const Financials = ({ color, name }) => {
-  // Lift data state from FinancialTable to parent for shared control
-  const [data, setData] = useState([]);
+  const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const airlineIdFromQuery = searchParams.get("airlineId");
+  const airlineId = GetFromLocalStorage("airlineId") || airlineIdFromQuery;
 
-  // Helper to check if table data is "empty"
-  const isTableEmpty = React.useMemo(() => {
-    if (data.length === 0) return true;
-    return data.every((row) =>
-      Object.values(row).every((value) => value.trim() === "")
-    );
-  }, [data]);
+  // Filtering and Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
-  // Handler for "Add Financials" button click: initialize with 5 empty rows
-  const handleAddFinancials = () => {
-    // Generate rowKeys same as in FinancialTable (you may want to extract this to a shared util)
-    const headers = [
-      "S/N",
-      "MAWB",
-      "DATE OF ISSUES",
-      "AGENTS/CLIENTS",
-      "PRODUCT",
-      "ROUTING",
-      "FLIGHT NO",
-      "PIECES",
-      "CHARGEABLE WEIGHT (KG)",
-      "GROSS WEIGHT (KG)",
-      "SPOT RATE",
-      "PUBLISHED RATES",
-      "ROE",
-      "FREIGHT AMOUNT (NGN)",
-      "NCAA CHARGES 5%",
-      "TOTAL CHARGE (NGN)",
-      "CHARGES COLLECT",
-      "FUEL SURCHARGE",
-      "SEC SURCHARGE",
-      "HANDLING SURCHARGE",
-      "DUE APG INC",
-      "DUE SLC",
-      "SURCHARGE DUE AGENT",
-      "AWB FEE",
-      "GSA COMMISSION (NGN)",
-      "7.5%VAT ON COMMISSION",
-      "AMT DUE AIRLINE",
-      "DUE APG INC",
-      "DUE SLC",
-    ];
+  // Edit/View Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewOnly, setIsViewOnly] = useState(false);
+  const [selectedFinancial, setSelectedFinancial] = useState(null);
 
-    const rowKeys = [];
-    const seen = new Set();
-    headers.forEach((header) => {
-      let key = header;
-      let counter = 1;
-      while (seen.has(key)) {
-        key = `${header} ${counter}`;
-        counter++;
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [financialToDelete, setFinancialToDelete] = useState(null);
+  const { mutate: deleteFinancial, isPending: isDeleting } = useDeleteFinancial();
+
+  const handleOpenModal = (id, mode = "edit") => {
+    const item = financialItems.find((f) => f.id === id);
+    if (item) {
+      setSelectedFinancial(item);
+      setIsViewOnly(mode === "view");
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedFinancial(null);
+    setIsViewOnly(false);
+  };
+
+  const handleDeleteClick = (id) => {
+    const item = financialItems.find((f) => f.id === id);
+    if (item) {
+      setFinancialToDelete(item);
+      setIsDeleteModalOpen(true);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (!financialToDelete) return;
+
+    deleteFinancial(
+      {
+        airlineId,
+        shipmentId: financialToDelete.shipmentId,
+        financialId: financialToDelete.id,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Financial record deleted successfully");
+          queryClient.invalidateQueries(["financials", "airline", airlineId]);
+          setIsDeleteModalOpen(false);
+          setFinancialToDelete(null);
+        },
+        onError: (err) => {
+          toast.error(err.response?.data?.message || "Failed to delete financial record");
+        },
       }
-      seen.add(key);
-      rowKeys.push(key);
-    });
-
-    const initialRows = Array.from({ length: 5 }, () =>
-      rowKeys.reduce((acc, key) => ({ ...acc, [key]: "" }), {})
     );
-    setData(initialRows);
   };
 
-  // Handler to clear all data (e.g., from a "Clear" button in table, if added)
-  const handleClearAll = () => {
-    setData([]);
-  };
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
-  // Update handler passed to FinancialTable
-  const handleUpdateCell = (rowIndex, colIndex, value) => {
-    // You'll need to pass rowKeys to FinancialTable or regenerate here
-    // For brevity, assuming FinancialTable handles its own keys; adjust as needed
-    // In practice, extract rowKeys to a constant outside
-    setData((prevData) => {
-      const newData = [...prevData];
-      // Assuming colIndex maps directly; use rowKeys in FinancialTable
-      const key = rowKeys[colIndex]; // rowKeys defined above
-      newData[rowIndex] = { ...newData[rowIndex], [key]: value };
-      return newData;
-    });
-  };
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, startDate, endDate, pageSize]);
 
-  const [createNow, setCreateNow] = useState(false);
+  const {
+    data: financials,
+    isLoading,
+    error,
+  } = useGetAirlinesFinancials(airlineId, {
+    page: currentPage,
+    pageSize: pageSize,
+    mawbSearch: debouncedSearch,
+    startDate,
+    endDate,
+  });
 
-  const handleCreateNow = () => {
-    setCreateNow(true);
-  };
+  // Support both { data: items[] } and { data: { items: [], totalPages: 0 } } formats
+  const financialItems = Array.isArray(financials?.data) 
+    ? financials.data 
+    : financials?.data?.items || [];
+
+  const totalPages = financials?.data?.totalPages || 
+    Math.ceil((financials?.data?.totalCount || financialItems.length || 0) / pageSize);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] p-1 md:p-4">
-      <div className="flex-none">
+    <div className="flex flex-col p-4 min-h-screen">
+      <div className="flex-none flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <HeaderTitle
           title="Financials"
           description="Access shipment billing, airline settlements, and financial summaries, all in one place."
         />
       </div>
-      <div className="flex-1 overflow-x-auto px-2">
-        <FinancialTable />
+
+      <div className="flex-none px-2 mb-2">
+        <ShipmentFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
+          color={color}
+        />
       </div>
+
+      <div className="flex-1 px-2 min-h-0">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-500">Loading financials...</p>
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center bg-red-50 text-red-600 rounded-xl border border-red-100 italic">
+            Error loading financials. Please try again.
+          </div>
+        ) : financialItems.length > 0 ? (
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-auto">
+              <FinancialTable
+                color={color}
+                data={financialItems}
+                airlineId={airlineId}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+                onEdit={(id) => handleOpenModal(id, "edit")}
+                onView={(id) => handleOpenModal(id, "view")}
+                onDelete={handleDeleteClick}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-8 p-12 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+            <p className="text-gray-500 font-medium">
+              No financial records found.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <EditFinancialsModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseModal}
+        airlineId={airlineId}
+        financialData={selectedFinancial}
+        isViewOnly={isViewOnly}
+        color={color}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Financial Record"
+        message="Are you sure you want to delete the financial record for MAWB"
+        identifier={financialToDelete?.mawb}
+        isDeleting={isDeleting}
+        color={color}
+      />
     </div>
   );
 };

@@ -22,7 +22,7 @@ export const shipmentApi = {
   // Search shipments by AWB number
   searchShipments: async (airlineId, awbNumber) => {
     const response = await axiosInstance.get(
-      `/airlines/${airlineId}/shipments/search`,
+      `/airlines/${airlineId}/shipments/search-by-awb`,
       {
         params: { awbNumber },
       },
@@ -47,11 +47,28 @@ export const shipmentApi = {
     return response.data;
   },
 
-
   // Delete a shipment
   deleteShipment: async (airlineId, id) => {
     const response = await axiosInstance.delete(
       `/airlines/${airlineId}/shipments/${id}/delete-shipment`,
+    );
+    return response.data;
+  },
+
+  // Filter shipments
+  filterShipments: async (airlineId, params) => {
+    const response = await axiosInstance.get(
+      `/airlines/${airlineId}/shipments/filter`,
+      { params },
+    );
+    return response.data;
+  },
+
+  // Get shipments by status
+  getShipmentsByStatus: async (airlineId, params) => {
+    const response = await axiosInstance.get(
+      `/airlines/${airlineId}/shipments/get-by-status`,
+      { params },
     );
     return response.data;
   },
@@ -109,6 +126,15 @@ export const shipmentApi = {
     return response.data;
   },
 
+  // Get all documents for an airline
+  getDocumentsForAirline: async (airlineId, params) => {
+    const response = await axiosInstance.get(
+      `/airlines/${airlineId}/get-documents-for-airline`,
+      { params },
+    );
+    return response.data;
+  },
+
   // Get financials for a shipment
   getFinancial: async (airlineId, shipmentId) => {
     const response = await axiosInstance.get(
@@ -139,6 +165,17 @@ export const shipmentApi = {
   deleteFinancial: async (airlineId, shipmentId, financialId) => {
     const response = await axiosInstance.delete(
       `/airlines/${airlineId}/shipments/${shipmentId}/financials/${financialId}/delete-financial`,
+    );
+    return response.data;
+  },
+
+  // Get all financials for an airline
+  getAirlinesFinancials: async (airlineId, params) => {
+    const response = await axiosInstance.get(
+      `/airlines/${airlineId}/financials`,
+      {
+        params,
+      },
     );
     return response.data;
   },
