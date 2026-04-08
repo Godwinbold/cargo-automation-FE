@@ -3,7 +3,7 @@ import Navbar from "./Navbar";
 import MainText from "./MainText";
 import AirlinePartners from "./AirlinePartners";
 import ExecutivesDashboard from "./ExecutiveDashboard";
-import Footer from "../footer";
+import Footer from "../Footer";
 import { useGetAllAirlines } from "../../hooks/useGeneral";
 
 const Home = () => {
