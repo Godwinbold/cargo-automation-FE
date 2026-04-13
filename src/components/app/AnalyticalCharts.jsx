@@ -7,61 +7,69 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
+  Cell
 } from "recharts";
 
-const AnalyticalCharts = () => {
-  const shipmentData = [
-    { month: "Jan", value: 65 },
-    { month: "Feb", value: 85 },
-    { month: "Mar", value: 105 },
-    { month: "Apr", value: 115 },
-    { month: "May", value: 125 },
-    { month: "Jun", value: 135 },
-    { month: "Jul", value: 155 },
-    { month: "Aug", value: 135 },
-    { month: "Sep", value: 120 },
-    { month: "Oct", value: 105 },
-    { month: "Nov", value: 95 },
-    { month: "Dec", value: 130 },
-  ];
+const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
+  const formatMonth = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString("default", { month: "short" });
+  };
 
-  const revenueData = [
-    { month: "Jan", value: 1.2 },
-    { month: "Feb", value: 1.8 },
-    { month: "Mar", value: 2.1 },
-    { month: "Apr", value: 2.3 },
-    { month: "May", value: 2.5 },
-    { month: "Jun", value: 2.7 },
-    { month: "Jul", value: 3.1 },
-    { month: "Aug", value: 2.7 },
-    { month: "Sep", value: 2.4 },
-    { month: "Oct", value: 2.1 },
-    { month: "Nov", value: 1.9 },
-    { month: "Dec", value: 2.6 },
-  ];
+  const combinedData = (monthlyData || []).map((item) => ({
+    name: formatMonth(item.month),
+    shipments: item.shipmentCount,
+    revenue: parseFloat((item.revenue / 1000000).toFixed(2)),
+  }));
 
-  const CustomTooltipShipment = ({ active, payload, label }) => {
+  const weightComparisonData = averageWeight ? [
+    { name: "Previous", value: parseFloat(averageWeight.previousValue.toFixed(2)), color: "#E0E0E0" },
+    { name: "Current", value: parseFloat(averageWeight.currentValue.toFixed(2)), color: "#3DA5E0" }
+  ] : [];
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-[#D3EBF8] h-[450px] animate-pulse">
+           <div className="h-6 bg-gray-100 rounded w-1/4 mb-10"></div>
+           <div className="h-64 bg-gray-50 rounded"></div>
+        </div>
+        <div className="bg-white p-6 rounded-xl border border-[#D3EBF8] h-[450px] animate-pulse">
+           <div className="h-6 bg-gray-100 rounded w-1/2 mb-10"></div>
+           <div className="h-64 bg-gray-50 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  const CustomTooltipCombined = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-gray-100 shadow-lg rounded-lg">
-          <p className="text-xs font-semibold text-gray-500 mb-1">{label}</p>
-          <p className="text-sm font-bold text-[#1A1A1A]">
-            Shipments: <span className="font-bold">{payload[0].value}</span>
-          </p>
+        <div className="bg-white p-4 border border-gray-100 shadow-xl rounded-xl">
+          <p className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-tight">{label}</p>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-8">
+              <span className="text-sm font-medium text-gray-600">Shipments</span>
+              <span className="text-sm font-bold text-[#007AFF]">{payload[0].value}</span>
+            </div>
+            <div className="flex items-center justify-between gap-8">
+              <span className="text-sm font-medium text-gray-600">Revenue</span>
+              <span className="text-sm font-bold text-[#28A745]">₦{payload[1].value}M</span>
+            </div>
+          </div>
         </div>
       );
     }
     return null;
   };
 
-  const CustomTooltipRevenue = ({ active, payload, label }) => {
+  const CustomTooltipWeight = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-gray-100 shadow-lg rounded-lg">
-          <p className="text-xs font-semibold text-gray-500 mb-1">{label}</p>
-          <p className="text-sm font-bold text-[#1A1A1A]">
-            Revenue: <span className="font-bold">N{payload[0].value}M</span>
-          </p>
+        <div className="bg-white p-4 border border-gray-100 shadow-xl rounded-xl">
+          <p className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-tight">{payload[0].payload.name}</p>
+          <p className="text-lg font-black text-[#1A1A1A]">{payload[0].value.toFixed(2)}<small className="font-medium text-gray-500 ml-1">kg</small></p>
         </div>
       );
     }
@@ -69,120 +77,110 @@ const AnalyticalCharts = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Monthly Shipments Chart */}
-      <div className="bg-white p-6 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-[#D3EBF8]">
-        <div className="mb-6">
-          <h3 className="text-[16px] font-bold text-[#1A1A1A]">
-            Monthly Shipments
-          </h3>
-          <p className="text-sm text-[#6B6B6B] mt-1">
-            Shipment volume throught the year
-          </p>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Integrated Monthly Trends */}
+      <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#D3EBF8]">
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-[18px] font-bold text-[#1A1A1A]">Monthly Performance</h3>
+            <p className="text-sm text-[#6B6B6B] mt-1">Comparison of shipment volume and revenue trends</p>
+          </div>
+          <div className="flex items-center gap-4 bg-gray-50/50 p-2 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#007AFF]" />
+              <span className="text-xs font-medium text-gray-600">Shipments</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#28A745]" />
+              <span className="text-xs font-medium text-gray-600">Revenue (M)</span>
+            </div>
+          </div>
         </div>
-        <div className="h-[300px] w-full  mt-10">
+
+        <div className="h-[320px] w-full mt-4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={shipmentData}
-              margin={{ top: 10, right: 0, left: 10, bottom: 0 }}
+              data={combinedData}
+              margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+              barGap={8}
             >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="#F0F0F0"
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F5F9" />
+              <XAxis 
+                dataKey="name" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 500 }}
+                dy={12}
               />
-              <XAxis
-                dataKey="month"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#6B6B6B", fontSize: 12 }}
-                dy={10}
+              <YAxis 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: "#94A3B8", fontSize: 12 }}
+                tickFormatter={(val) => val >= 1000 ? `${(val/1000).toFixed(1)}k` : val}
               />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#6B6B6B", fontSize: 12 }}
-                label={{
-                  value: "Shipment count",
-                  angle: -90,
-                  position: "insideLeft",
-                  fill: "#6B6B6B",
-                  fontSize: 12,
-                  style: { textAnchor: "middle" },
-                  offset: 0,
-                }}
+              <Tooltip content={<CustomTooltipCombined />} cursor={{ fill: "#F8FAFC" }} />
+              <Bar 
+                dataKey="shipments" 
+                fill="#007AFF" 
+                radius={[6, 6, 0, 0]} 
+                barSize={32}
               />
-              <Tooltip
-                content={<CustomTooltipShipment />}
-                cursor={{ fill: "transparent" }}
-              />
-              <Bar
-                dataKey="value"
-                fill="#007AFF"
-                radius={[4, 4, 0, 0]}
-                barSize={24}
+              <Bar 
+                dataKey="revenue" 
+                fill="#28A745" 
+                radius={[6, 6, 0, 0]} 
+                barSize={32}
               />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Monthly Revenue Chart */}
-      <div className="bg-white p-6 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-[#D3EBF8]">
-        <div className="mb-6">
-          <h3 className="text-[16px] font-bold text-[#1A1A1A]">
-            Monthly Revenue
-          </h3>
-          <p className="text-sm text-[#6B6B6B] mt-1">
-            Revenue performance in nigeria naira
-          </p>
+      {/* Average Weight Comparison */}
+      <div className="bg-white p-6 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#D3EBF8]">
+        <div className="mb-8">
+          <h3 className="text-[18px] font-bold text-[#1A1A1A]">Average Weight</h3>
+          <p className="text-sm text-[#6B6B6B] mt-1">Current vs Previous period comparison</p>
         </div>
-        <div className="h-[300px] w-full  mt-10">
+
+        <div className="h-[320px] w-full mt-4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={revenueData}
-              margin={{ top: 10, right: 0, left: 10, bottom: 0 }}
+              data={weightComparisonData}
+              margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
             >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="#F0F0F0"
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F5F9" />
+              <XAxis 
+                dataKey="name" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: "#94A3B8", fontSize: 13, fontWeight: 600 }}
+                dy={12}
               />
-              <XAxis
-                dataKey="month"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#6B6B6B", fontSize: 12 }}
-                dy={10}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#6B6B6B", fontSize: 12 }}
-                tickFormatter={(value) => `N${value}M`}
-                label={{
-                  value: "Revenue(N)",
-                  angle: -90,
-                  position: "insideLeft",
-                  fill: "#6B6B6B",
-                  fontSize: 12,
-                  style: { textAnchor: "middle" },
-                  offset: 0,
-                }}
-              />
-              <Tooltip
-                content={<CustomTooltipRevenue />}
-                cursor={{ fill: "transparent" }}
-              />
-              <Bar
-                dataKey="value"
-                fill="#28A745"
-                radius={[4, 4, 0, 0]}
-                barSize={24}
-              />
+              <YAxis hide />
+              <Tooltip content={<CustomTooltipWeight />} cursor={false} />
+              <Bar 
+                dataKey="value" 
+                radius={[12, 12, 12, 12]} 
+                barSize={64}
+                background={{ fill: '#F8FAFC', radius: 12 }}
+              >
+                {weightComparisonData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
+
+        {averageWeight && (
+          <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase">Growth</span>
+            <div className={`text-sm font-bold flex items-center gap-1 ${averageWeight.growthPercentage >= 0 ? "text-[#28A745]" : "text-red-500"}`}>
+              {averageWeight.growthPercentage >= 0 ? "+" : ""}{averageWeight.growthPercentage.toFixed(2)}%
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

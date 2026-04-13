@@ -6,17 +6,18 @@ const FilteredResult = ({ isLoading, data }) => {
     totalShipments: 0,
     totalRevenue: 0,
     averageWeightKg: 0,
+    totalWeightKg: 0,
   };
 
   const formatRevenue = (amount = 0) => {
-    if (amount >= 1000000) return `N${(amount / 1000000).toFixed(1)}M`;
-    if (amount >= 1000) return `N${(amount / 1000).toFixed(1)}K`;
-    return `N${amount.toLocaleString()}`;
+    if (amount >= 1_000_000) return `N${(amount / 1_000_000).toFixed(2)}M`;
+    if (amount >= 1_000) return `N${(amount / 1_000).toFixed(2)}K`;
+    return `N${parseFloat(amount.toFixed(2)).toLocaleString()}`;
   };
 
   const formatWeight = (kg = 0) => {
-    if (kg >= 1000) return `${(kg / 1000).toFixed(1)} tons`;
-    return `${kg.toLocaleString()} kg`;
+    if (kg >= 1_000) return `${(kg / 1_000).toFixed(2)} tons`;
+    return `${parseFloat(kg.toFixed(2)).toLocaleString()} kg`;
   };
 
   const stats = [
@@ -47,6 +48,15 @@ const FilteredResult = ({ isLoading, data }) => {
       iconBg: "bg-[#FDDECE]",
       iconColor: "text-[#E86E18]",
     },
+    {
+      title: "Total Weight",
+      value: isLoading ? "..." : formatWeight(resultData.totalWeightKg || 0),
+      change: "+5.1% from last month",
+      isPositive: true,
+      icon: Weight,
+      iconBg: "bg-[#EDE9FE]",
+      iconColor: "text-[#7C3AED]",
+    },
   ];
 
   return (
@@ -55,7 +65,7 @@ const FilteredResult = ({ isLoading, data }) => {
         Filtered Result
       </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <div
             key={index}

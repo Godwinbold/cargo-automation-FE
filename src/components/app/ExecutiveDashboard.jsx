@@ -26,6 +26,7 @@ const ExecutiveDashboard = () => {
     totalShipments: 0,
     totalRevenue: 0,
     averageWeightKg: 0,
+    totalWeightKg: 0,
   };
   return (
     <main>

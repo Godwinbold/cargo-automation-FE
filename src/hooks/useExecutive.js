@@ -9,9 +9,18 @@ export const useGetExecutiveDashboard = (params, options = {}) => {
   });
 };
 
+export const useGetExecutiveAnalytical = (params, options = {}) => {
+  return useQuery({
+    queryKey: ["executiveAnalytical", params],
+    queryFn: () => executiveApi.getAnalytical(params),
+    ...options,
+  });
+};
+
 export const useExecutive = () => {
   return {
     useGetExecutiveDashboard,
+    useGetExecutiveAnalytical,
   };
 };
 
