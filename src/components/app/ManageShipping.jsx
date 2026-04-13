@@ -21,22 +21,18 @@ const ManageShipping = ({ color, name }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // Debounce search query
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
+  const handleSearch = () => {
+    setAppliedSearch(searchQuery);
+  };
 
   // Reset to first page when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, startDate, endDate, pageSize]);
+  }, [appliedSearch, startDate, endDate, pageSize]);
 
   // The hook is already enabled only when airlineId is truthy
   const {
@@ -46,7 +42,7 @@ const ManageShipping = ({ color, name }) => {
   } = useGetShipments(airlineId, {
     page: currentPage,
     pageSize: pageSize,
-    awbSearch: debouncedSearch,
+    awbSearch: appliedSearch,
     startDate,
     endDate,
   });
@@ -83,6 +79,7 @@ const ManageShipping = ({ color, name }) => {
         <ShipmentFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onSearch={handleSearch}
           startDate={startDate}
           onStartDateChange={setStartDate}
           endDate={endDate}

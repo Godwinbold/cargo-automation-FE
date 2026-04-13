@@ -47,9 +47,12 @@ const CreateShipmentModal = ({ isOpen, onClose, airlineId, color }) => {
           });
         },
         onError: (error) => {
-          toast.error(
-            error.response?.data?.message || "Failed to create shipment",
-          );
+          const apiError = error.response?.data;
+          const errorMessage =
+            apiError?.errors?.[0]?.message ||
+            apiError?.message ||
+            "Failed to create shipment";
+          toast.error(errorMessage);
         },
       },
     );

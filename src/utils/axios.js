@@ -34,7 +34,7 @@ instance.interceptors.response.use(
         const refreshToken = GetFromLocalStorage("refresh_token");
 
         const response = await axios.post(
-          `${import.meta.env.VITE_API_URL || "http://sadiqtaiwo-001-site1.ntempurl.com"}/api/token/refresh/`,
+          `${import.meta.env.VITE_API_URL}/api/token/refresh/`,
           {
             refresh: refreshToken,
           },

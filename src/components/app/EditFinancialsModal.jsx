@@ -21,6 +21,7 @@ const InputField = ({
   onChange,
   placeholder,
   disabled = false,
+  ...props
 }) => (
   <div className="space-y-1.5">
     <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest px-0.5">
@@ -34,6 +35,8 @@ const InputField = ({
       placeholder={placeholder}
       disabled={disabled}
       className={`w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-800 ${disabled ? "bg-gray-100 cursor-not-allowed text-gray-500 opacity-80" : ""}`}
+      {...(type === "number" ? { step: "any" } : {})}
+      {...props}
     />
   </div>
 );

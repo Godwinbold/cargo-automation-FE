@@ -1,16 +1,49 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { LOGIN_NAME_CONFIGS } from "../../constants/configFile";
 import { useLoginAirlineUser } from "../../hooks/useAuth";
+import { useGetAllAirlines } from "../../hooks/useGeneral";
+import airlineMetadata from "../landing/AirlineMetadata";
+import AirlineSelection from "./AirlineSelection";
 import { toast } from "sonner";
 import { SaveToLocalStorage } from "../../utils/getFromLocals";
+import { useAuthContext } from "../../context/AuthContext";
 
 const LoginPage = () => {
+  const { login } = useAuthContext();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const nameSlug = searchParams.get("name") || "codiv";
-  const airlineId = searchParams.get("airlineId");
+  const [resolvedSlug, setResolvedSlug] = useState("");
+  const nameFromUrl = searchParams.get("name") || "";
+  const airlineId = searchParams.get("airlineId") || "";
+  const nameSlug = nameFromUrl || resolvedSlug;
+
+  const { data: airlinesData, isLoading: isLoadingAirlines } =
+    useGetAllAirlines({
+      enabled: (!nameFromUrl && !!airlineId) || (!nameFromUrl && !airlineId),
+    });
+
+  useEffect(() => {
+    if (!nameFromUrl) {
+      if (airlineId && airlinesData?.data) {
+        const currentAirline = airlinesData.data.find(
+          (a) => a.id === airlineId,
+        );
+        if (currentAirline) {
+          const metadata = airlineMetadata[currentAirline.airlineName] || {
+            slug: currentAirline.airlineName.toLowerCase().replace(/\s+/g, ""),
+          };
+          setResolvedSlug(metadata.slug);
+        }
+      } else if (!airlineId) {
+        // Clear resolved slug if we navigate back to base login without params
+        setResolvedSlug("");
+      }
+    }
+  }, [searchParams, airlinesData, nameFromUrl, airlineId]);
+
+  // nameSlug is derived above from URL or resolved state
 
   const { mutate: loginUser, isPending: isLoading } = useLoginAirlineUser();
 
@@ -20,20 +53,43 @@ const LoginPage = () => {
     }
   }, [airlineId]);
 
-  const config = LOGIN_NAME_CONFIGS[nameSlug];
-
-  if (!config) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Invalid name. <a href="/partners">Go back</a>
-      </div>
-    );
-  }
+  const config = useMemo(() => LOGIN_NAME_CONFIGS[nameSlug], [nameSlug]);
 
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [touched, setTouched] = useState({ email: false, password: false });
+
+  if (isLoadingAirlines && !nameSlug) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3DA5E0]"></div>
+      </div>
+    );
+  }
+
+  if (!config) {
+    // Show selection screen if we have no airline name and no ID to resolve from
+    if (!nameSlug && !airlineId && !isLoadingAirlines && airlinesData?.data) {
+      return <AirlineSelection airlines={airlinesData.data} type="login" />;
+    }
+    // Also show selection if we HAVE an airlineId but are currently loading/resolving it
+    if (airlineId && !nameSlug && isLoadingAirlines) {
+      return (
+        <div className="flex items-center justify-center h-screen tracking-widest text-xs font-bold text-gray-400 uppercase">
+          Resolving Airline...
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Invalid partner portal.{" "}
+        <a href="/" className="ml-1 text-blue-600 font-bold hover:underline">
+          Go back to home
+        </a>
+      </div>
+    );
+  }
 
   const validateField = (name, value) => {
     let error = "";
@@ -110,7 +166,7 @@ const LoginPage = () => {
             SaveToLocalStorage("access_token", loginData.token);
           }
           if (loginData) {
-            SaveToLocalStorage("user", loginData);
+            login(loginData);
             if (loginData.airlineId) {
               localStorage.setItem("airlineId", loginData.airlineId);
             }

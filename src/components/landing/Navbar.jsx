@@ -12,7 +12,7 @@ const Navbar = ({ airlines = [], isPending, isError }) => {
 
   return (
     <>
-      <nav className="flex w-full py-1 max-w-5xl md:h-[97px] justify-between px-2 md:pl-[40px] md:pr-[45px] md:rounded-2xl mx-auto items-center bg-white gap-6">
+      <nav className="relative z-[60] flex w-full py-1 max-w-5xl md:h-[97px] justify-between px-2 md:pl-[40px] md:pr-[45px] md:rounded-2xl mx-auto items-center bg-white gap-6">
         {/* logo  */}
         <div className="h-[40px] md:h-[60px]  max-w-[154px]">
           <img
@@ -61,7 +61,7 @@ const Navbar = ({ airlines = [], isPending, isError }) => {
 
       {/* mobile menu - sliding from right */}
       <div
-        className={`fixed top-0 right-0 h-full w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed top-0 right-0 h-full w-72 bg-white shadow-2xl z-[1100] transform transition-transform duration-300 ease-in-out lg:hidden ${
           isMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >

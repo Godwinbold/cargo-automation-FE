@@ -7,13 +7,13 @@ import Dashboard from "./pages/app/Dashboard";
 import Documents from "./components/app/Documents";
 import ManageShipping from "./components/app/ManageShipping";
 import DashboardLayout from "./components/app/DashboardLayout";
-
 import ExecutiveDashboard from "./components/app/ExecutiveDashboard";
 import ExecutiveSignup from "./components/auth/ExecutiveSignup";
 import ExecutiveLogin from "./components/auth/ExecutiveLogin";
 import ExecutiveForgotPasswordPage from "./components/auth/ExecutiveForgotPassword";
 import ExecutiveLayout from "./components/app/ExecutiveLayout";
 import ExecutiveAnalytical from "./components/app/ExecutiveAnalytical";
+import AuthGuard from "./components/auth/AuthGuard";
 
 const AppRoutes = () => {
   return (
@@ -30,14 +30,25 @@ const AppRoutes = () => {
           path="/executive-forgot-password"
           element={<ExecutiveForgotPasswordPage />}
         />
-        <Route path="/executive-dashboard" element={<ExecutiveLayout />}>
+        <Route
+          path="/executive-dashboard"
+          element={
+            <AuthGuard allowedRoles={["EXECUTIVE"]}>
+              <ExecutiveLayout />
+            </AuthGuard>
+          }
+        >
           <Route index element={<ExecutiveDashboard />} />
           <Route path="analytical" element={<ExecutiveAnalytical />} />
         </Route>
 
         <Route
           path="/united-dashboard"
-          element={<DashboardLayout color={"#04549B"} name="united" />}
+          element={
+            <AuthGuard allowedRoles={["USER"]}>
+              <DashboardLayout color={"#04549B"} name="united" />
+            </AuthGuard>
+          }
         >
           <Route index element={<Dashboard color={"#04549B"} />} />
           <Route
@@ -48,7 +59,11 @@ const AppRoutes = () => {
         </Route>
         <Route
           path="/turkish-dashboard"
-          element={<DashboardLayout color={"#CA0D11"} name="turkish" />}
+          element={
+            <AuthGuard allowedRoles={["USER"]}>
+              <DashboardLayout color={"#CA0D11"} name="turkish" />
+            </AuthGuard>
+          }
         >
           <Route
             index
@@ -65,7 +80,11 @@ const AppRoutes = () => {
         </Route>
         <Route
           path="/cotedivoire-dashboard"
-          element={<DashboardLayout color={"#1C7A39"} name="cotedivoire" />}
+          element={
+            <AuthGuard allowedRoles={["USER"]}>
+              <DashboardLayout color={"#1C7A39"} name="cotedivoire" />
+            </AuthGuard>
+          }
         >
           <Route
             index
@@ -82,7 +101,11 @@ const AppRoutes = () => {
         </Route>
         <Route
           path="/south-africa-dashboard"
-          element={<DashboardLayout color={"#003EA5"} name="south-africa" />}
+          element={
+            <AuthGuard allowedRoles={["USER"]}>
+              <DashboardLayout color={"#003EA5"} name="south-africa" />
+            </AuthGuard>
+          }
         >
           <Route index element={<Dashboard color={"#003EA5"} />} />
           <Route
@@ -93,7 +116,11 @@ const AppRoutes = () => {
         </Route>
         <Route
           path="/rwanda-dashboard"
-          element={<DashboardLayout color={"#045195"} name="rwanda" />}
+          element={
+            <AuthGuard allowedRoles={["USER"]}>
+              <DashboardLayout color={"#045195"} name="rwanda" />
+            </AuthGuard>
+          }
         >
           <Route
             index

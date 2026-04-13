@@ -5,8 +5,10 @@ import { useLoginAirlineUser } from "../../hooks/useAuth";
 import { useGetAllAirlines } from "../../hooks/useGeneral";
 import { toast } from "sonner";
 import { SaveToLocalStorage } from "../../utils/getFromLocals";
+import { useAuthContext } from "../../context/AuthContext";
 
 const ExecutiveLogin = () => {
+  const { login } = useAuthContext();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const urlAirlineId = searchParams.get("airlineId");
@@ -108,7 +110,7 @@ const ExecutiveLogin = () => {
             SaveToLocalStorage("access_token", loginData.token);
           }
           if (loginData) {
-            SaveToLocalStorage("user", loginData);
+            login(loginData);
             if (loginData.airlineId) {
               localStorage.setItem("airlineId", loginData.airlineId);
             }

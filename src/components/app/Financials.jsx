@@ -20,7 +20,7 @@ const Financials = ({ color, name }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -80,18 +80,14 @@ const Financials = ({ color, name }) => {
     );
   };
 
-  // Debounce search query
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
+  const handleSearch = () => {
+    setAppliedSearch(searchQuery);
+  };
 
-  // Reset to first page when search changes
+  // Reset to first page when search changes or filters applied
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, startDate, endDate, pageSize]);
+  }, [appliedSearch, startDate, endDate, pageSize]);
 
   const {
     data: financials,
@@ -100,7 +96,7 @@ const Financials = ({ color, name }) => {
   } = useGetAirlinesFinancials(airlineId, {
     page: currentPage,
     pageSize: pageSize,
-    mawbSearch: debouncedSearch,
+    mawbSearch: appliedSearch,
     startDate,
     endDate,
   });
@@ -126,6 +122,7 @@ const Financials = ({ color, name }) => {
         <ShipmentFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onSearch={handleSearch}
           startDate={startDate}
           onStartDateChange={setStartDate}
           endDate={endDate}
