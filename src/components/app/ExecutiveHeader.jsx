@@ -45,10 +45,10 @@ const ExecutiveHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
             )}
           </svg>
         </button>
-
+        <div className="hidden md:flex"></div>
 
         {/* Right Side: Notifications and User Menu */}
-        <div className="flex items-center space-x-4 ml-4">
+        <div className="flex items-center justify-end space-x-4 ml-4">
           {/* Notification Bell */}
           <button className="relative p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full">
             <svg

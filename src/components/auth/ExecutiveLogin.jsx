@@ -13,12 +13,25 @@ const ExecutiveLogin = () => {
   const navigate = useNavigate();
   const urlAirlineId = searchParams.get("airlineId");
 
-  const [formData, setFormData] = useState({ email: "", password: "", airlineId: urlAirlineId || "" });
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    airlineId: urlAirlineId || "",
+  });
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState({ email: "", password: "", airlineId: "" });
-  const [touched, setTouched] = useState({ email: false, password: false, airlineId: false });
+  const [errors, setErrors] = useState({
+    email: "",
+    password: "",
+    airlineId: "",
+  });
+  const [touched, setTouched] = useState({
+    email: false,
+    password: false,
+    airlineId: false,
+  });
   const { mutate: loginUser, isPending: isLoading } = useLoginAirlineUser();
-  const { data: airlinesData, isLoading: isLoadingAirlines } = useGetAllAirlines();
+  const { data: airlinesData, isLoading: isLoadingAirlines } =
+    useGetAllAirlines();
   const airlines = airlinesData?.data || [];
 
   // Validate single field
@@ -47,9 +60,15 @@ const ExecutiveLogin = () => {
   const validateForm = () => {
     const emailError = validateField("email", formData.email);
     const passwordError = validateField("password", formData.password);
-    const airlineError = !urlAirlineId ? validateField("airlineId", formData.airlineId) : "";
+    const airlineError = !urlAirlineId
+      ? validateField("airlineId", formData.airlineId)
+      : "";
 
-    const newErrors = { email: emailError, password: passwordError, airlineId: airlineError };
+    const newErrors = {
+      email: emailError,
+      password: passwordError,
+      airlineId: airlineError,
+    };
     setErrors(newErrors);
     return newErrors;
   };
@@ -100,12 +119,15 @@ const ExecutiveLogin = () => {
     }
 
     loginUser(
-      { airlineId: targetAirlineId, credentials: { email: formData.email, password: formData.password } },
+      {
+        airlineId: targetAirlineId,
+        credentials: { email: formData.email, password: formData.password },
+      },
       {
         onSuccess: (response) => {
           toast.success("Login successful!");
           const loginData = response?.data;
-          
+
           if (loginData?.token) {
             SaveToLocalStorage("access_token", loginData.token);
           }
@@ -120,7 +142,9 @@ const ExecutiveLogin = () => {
           }
 
           setTimeout(() => {
-            navigate(targetAirlineId ? `/executive-dashboard?airlineId=${targetAirlineId}` : "/executive-dashboard");
+            navigate(
+              targetAirlineId ? `/executive-dashboard` : "/executive-dashboard",
+            );
           }, 1000);
         },
         onError: (error) => {
@@ -130,13 +154,18 @@ const ExecutiveLogin = () => {
             "Invalid credentials";
           toast.error(message);
         },
-      }
+      },
     );
   };
 
   // Optional: Disable button if form is invalid or empty
   const isFormValid =
-    formData.email && formData.password && (!urlAirlineId ? formData.airlineId : true) && !errors.email && !errors.password && !errors.airlineId;
+    formData.email &&
+    formData.password &&
+    (!urlAirlineId ? formData.airlineId : true) &&
+    !errors.email &&
+    !errors.password &&
+    !errors.airlineId;
 
   return (
     <div className="flex items-center bg-[url('/images/loginbg.png')] bg-cover bg-center justify-center h-screen">
