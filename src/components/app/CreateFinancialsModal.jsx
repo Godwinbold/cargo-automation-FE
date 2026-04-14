@@ -4,7 +4,7 @@ import { useCreateFinancial } from "../../hooks/useShipment";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
-const InputField = ({ label, name, type = "text", value, onChange, placeholder }) => (
+const InputField = ({ label, name, type = "text", value, onChange, placeholder, ...props }) => (
   <div className="space-y-1.5">
     <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest px-0.5">
       {label}
@@ -16,6 +16,8 @@ const InputField = ({ label, name, type = "text", value, onChange, placeholder }
       onChange={onChange}
       placeholder={placeholder}
       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-800"
+      {...(type === "number" ? { step: "any" } : {})}
+      {...props}
     />
   </div>
 );

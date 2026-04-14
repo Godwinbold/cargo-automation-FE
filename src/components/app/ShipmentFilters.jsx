@@ -4,6 +4,7 @@ import { Search, Calendar, X, Filter } from "lucide-react";
 const ShipmentFilters = ({
   searchQuery,
   onSearchChange,
+  onSearch,
   startDate,
   onStartDateChange,
   endDate,
@@ -31,25 +32,42 @@ const ShipmentFilters = ({
 
   return (
     <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-      <div className="relative flex-1 group">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition">
-          <Search size={18} />
+      <div className="relative flex-1">
+        <div className="flex items-center bg-white border border-gray-200 rounded-full shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all overflow-hidden">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                onSearch?.();
+              }
+            }}
+            placeholder="Search by Airway Bill Number..."
+            className="flex-1 pl-6 pr-2 py-3 bg-transparent focus:outline-none text-sm"
+          />
+          <div className="flex items-center pr-2 gap-2">
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  onSearchChange("");
+                  // Optionally trigger search with empty query immediately
+                  setTimeout(() => onSearch?.(), 0);
+                }}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X size={16} />
+              </button>
+            )}
+            <button
+              onClick={onSearch}
+              style={{ backgroundColor: color || "#3DA5E0" }}
+              className="p-2.5 text-white rounded-full hover:opacity-90 transition-opacity flex items-center justify-center shrink-0"
+            >
+              <Search size={18} />
+            </button>
+          </div>
         </div>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search by Airway Bill Number..."
-          className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => onSearchChange("")}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          >
-            <X size={16} />
-          </button>
-        )}
       </div>
 
       <div className="relative flex-shrink-0 w-full md:w-auto">

@@ -38,7 +38,8 @@ const ExecutiveSidebar = ({ setMobileMenuOpen }) => {
     >
       {/* Logo/Header */}
       <div className="p-4  flex items-center justify-between">
-        <div
+        <Link
+          to={"/"}
           className={`flex items-center ${
             collapsed ? "justify-center w-full" : "space-x-3"
           }`}
@@ -50,7 +51,7 @@ const ExecutiveSidebar = ({ setMobileMenuOpen }) => {
               collapsed ? "h-12 w-12" : "h-[60px] w-[120px]"
             }`}
           />
-        </div>
+        </Link>
 
         <button className="md:hidden">
           <X onClick={() => setMobileMenuOpen(false)} />

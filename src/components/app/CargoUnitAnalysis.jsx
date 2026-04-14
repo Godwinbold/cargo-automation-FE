@@ -1,5 +1,4 @@
 import React from "react";
-import { ChevronDown } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -8,61 +7,60 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Cell,
+  PieChart,
+  Pie
 } from "recharts";
 
-const CargoUnitAnalysis = () => {
-  const shipmentData = [
-    { month: "Jan", value: 65 },
-    { month: "Feb", value: 87 },
-    { month: "Mar", value: 105 },
-    { month: "Apr", value: 115 },
-    { month: "May", value: 125 },
-    { month: "Jun", value: 135 },
-    { month: "Jul", value: 152 },
-    { month: "Aug", value: 135 },
-    { month: "Sep", value: 120 },
-    { month: "Oct", value: 106 },
-    { month: "Nov", value: 95 },
-    { month: "Dec", value: 130 },
-  ];
+const CargoUnitAnalysis = ({ cargoUnits, isLoading }) => {
+  // Sorting airlines by revenue for the chart
+  const revenueByAirline = (cargoUnits || [])
+    .map(unit => ({
+      name: unit.airlineName,
+      revenue: parseFloat((unit.totalAmount / 1000000).toFixed(2)),
+      shipments: unit.totalShipments
+    }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10); // Show top 10
 
-  const revenueData = [
-    { month: "Jan", value: 1.3 },
-    { month: "Feb", value: 1.8 },
-    { month: "Mar", value: 2.1 },
-    { month: "Apr", value: 2.3 },
-    { month: "May", value: 2.5 },
-    { month: "Jun", value: 2.7 },
-    { month: "Jul", value: 3.1 },
-    { month: "Aug", value: 2.7 },
-    { month: "Sep", value: 2.4 },
-    { month: "Oct", value: 2.1 },
-    { month: "Nov", value: 1.9 },
-    { month: "Dec", value: 2.6 },
-  ];
+  // Distribution for pie chart
+  const shipmentDistribution = (cargoUnits || [])
+    .filter(u => u.totalShipments > 0)
+    .map(unit => ({
+      name: unit.airlineName,
+      value: unit.totalShipments
+    }));
 
-  const CustomTooltipShipment = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-3 border border-gray-100 shadow-lg rounded-lg">
-          <p className="text-xs font-semibold text-gray-500 mb-1">{label}</p>
-          <p className="text-sm font-bold text-[#1A1A1A]">
-            Shipments: <span className="font-bold">{payload[0].value}</span>
-          </p>
+  const COLORS = ["#36A2EB", "#FF6384", "#4BC0C0", "#FFCE56", "#9966FF", "#FF9F40"];
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-[#D3EBF8] h-[400px] animate-pulse">
+          <div className="h-6 bg-gray-100 rounded w-1/3 mb-10"></div>
+          <div className="h-48 bg-gray-50 rounded"></div>
         </div>
-      );
-    }
-    return null;
-  };
+        <div className="bg-white p-6 rounded-xl border border-[#D3EBF8] h-[400px] animate-pulse">
+          <div className="h-6 bg-gray-100 rounded w-1/2 mb-10"></div>
+          <div className="h-48 bg-gray-50 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
-  const CustomTooltipRevenue = ({ active, payload, label }) => {
+  const CustomTooltipRevenue = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-gray-100 shadow-lg rounded-lg">
-          <p className="text-xs font-semibold text-gray-500 mb-1">{label}</p>
-          <p className="text-sm font-bold text-[#1A1A1A]">
-            Revenue: <span className="font-bold">N{payload[0].value}M</span>
-          </p>
+        <div className="bg-white p-4 border border-gray-100 shadow-xl rounded-xl">
+          <p className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-tight">{payload[0].payload.name}</p>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-600">Revenue:</span>
+            <span className="text-sm font-bold text-[#28A745]">₦{payload[0].value}M</span>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-sm font-medium text-gray-600">Shipments:</span>
+            <span className="text-sm font-bold text-[#3DA5E0]">{payload[0].payload.shipments}</span>
+          </div>
         </div>
       );
     }
@@ -70,153 +68,92 @@ const CargoUnitAnalysis = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Filter Section */}
-      <div className="bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-[#D3EBF8] p-6">
-        <h3 className="text-[16px] font-bold text-[#1A1A1A] mb-4">
-          Cargo Unit Filter
-        </h3>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Airline Revenue Chart */}
+      <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#D3EBF8]">
+        <div className="mb-8">
+          <h3 className="text-[18px] font-bold text-[#1A1A1A]">Airline Performance (Revenue)</h3>
+          <p className="text-sm text-[#6B6B6B] mt-1">Comparing total revenue generated across cargo units</p>
+        </div>
 
-        <div className="flex flex-col md:flex-row items-end gap-4">
-          <div className="w-full md:w-1/2">
-            <label className="block text-sm font-normal text-[#6B6B6B] mb-2">
-              Select cargo unit
-            </label>
-            <div className="relative">
-              <select className="w-full pl-4 pr-10 py-3 bg-white border border-gray-200 rounded-lg text-[#1A1A1A] appearance-none focus:outline-none focus:border-[#3DA5E0] transition-colors cursor-pointer font-medium">
-                <option>Turkish</option>
-                <option>RwandAir</option>
-                <option>Air Cote d' voire</option>
-                <option>United Cargo</option>
-                <option>South African Airways</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
-
-          <div className="w-full md:w-auto">
-            <button className="w-full md:w-auto whitespace-nowrap py-3 px-12 rounded-lg text-white font-semibold shadow-sm hover:opacity-90 transition-opacity bg-[#3DA5E0]">
-              Apply Filter
-            </button>
-          </div>
+        <div className="h-[300px] w-full mt-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              layout="vertical"
+              data={revenueByAirline}
+              margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F0F5F9" />
+              <XAxis 
+                type="number" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: "#94A3B8", fontSize: 12 }}
+                tickFormatter={(val) => `₦${val}M`}
+              />
+              <YAxis 
+                type="category" 
+                dataKey="name" 
+                axisLine={false} 
+                tickLine={false} 
+                width={120}
+                tick={{ fill: "#1A1A1A", fontSize: 12, fontWeight: 500 }}
+              />
+              <Tooltip content={<CustomTooltipRevenue />} cursor={{ fill: "#F8FAFC" }} />
+              <Bar 
+                dataKey="revenue" 
+                fill="#3DA5E0" 
+                radius={[0, 10, 10, 0]} 
+                barSize={20}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Shipments Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-[#D3EBF8]">
-          <div className="mb-6">
-            <h3 className="text-[16px] font-bold text-[#1A1A1A]">
-              Monthly Shipments
-            </h3>
-            <p className="text-sm text-[#6B6B6B] mt-1">
-              Shipment volume throught the month
-            </p>
-          </div>
-          <div className="h-[300px] w-full mt-10">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={shipmentData}
-                margin={{ top: 10, right: 0, left: 10, bottom: 0 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="#F0F0F0"
-                />
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#6B6B6B", fontSize: 12 }}
-                  dy={10}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#6B6B6B", fontSize: 12 }}
-                  label={{
-                    value: "Shipment count",
-                    angle: -90,
-                    position: "insideLeft",
-                    fill: "#6B6B6B",
-                    fontSize: 12,
-                    style: { textAnchor: "middle" },
-                    offset: 0,
-                  }}
-                />
-                <Tooltip
-                  content={<CustomTooltipShipment />}
-                  cursor={{ fill: "transparent" }}
-                />
-                <Bar
-                  dataKey="value"
-                  fill="#007AFF"
-                  radius={[4, 4, 0, 0]}
-                  barSize={24}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Shipment Distribution */}
+      <div className="bg-white p-6 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#D3EBF8]">
+        <div className="mb-8">
+          <h3 className="text-[18px] font-bold text-[#1A1A1A]">Shipment Share</h3>
+          <p className="text-sm text-[#6B6B6B] mt-1">Volume distribution by cargo unit</p>
         </div>
 
-        {/* Monthly Revenue Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-[#D3EBF8]">
-          <div className="mb-6">
-            <h3 className="text-[16px] font-bold text-[#1A1A1A]">
-              Monthly Revenue
-            </h3>
-            <p className="text-sm text-[#6B6B6B] mt-1">
-              Revenue performance in nigeria naira
-            </p>
-          </div>
-          <div className="h-[300px] w-full  mt-10">
+        <div className="h-[260px] w-full flex items-center justify-center">
+          {shipmentDistribution.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={revenueData}
-                margin={{ top: 10, right: 0, left: 10, bottom: 0 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="#F0F0F0"
-                />
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#6B6B6B", fontSize: 12 }}
-                  dy={10}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#6B6B6B", fontSize: 12 }}
-                  tickFormatter={(value) => `N${value}M`}
-                  label={{
-                    value: "Revenue(N)",
-                    angle: -90,
-                    position: "insideLeft",
-                    fill: "#6B6B6B",
-                    fontSize: 12,
-                    style: { textAnchor: "middle" },
-                    offset: 0,
-                  }}
-                />
-                <Tooltip
-                  content={<CustomTooltipRevenue />}
-                  cursor={{ fill: "transparent" }}
-                />
-                <Bar
+              <PieChart>
+                <Pie
+                  data={shipmentDistribution}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
                   dataKey="value"
-                  fill="#F05A00"
-                  radius={[4, 4, 0, 0]}
-                  barSize={24}
-                />
-              </BarChart>
+                >
+                  {shipmentDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
             </ResponsiveContainer>
-          </div>
+          ) : (
+            <div className="text-sm text-gray-400 italic">No shipment data to display</div>
+          )}
+        </div>
+        
+        {/* Legend */}
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+          {shipmentDistribution.slice(0, 4).map((entry, index) => (
+            <div key={index} className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+              <span className="text-[11px] font-semibold text-gray-700 truncate max-w-[80px]">{entry.name}</span>
+            </div>
+          ))}
+          {shipmentDistribution.length > 4 && (
+            <span className="text-[11px] text-gray-400 font-medium">+{shipmentDistribution.length - 4} more</span>
+          )}
         </div>
       </div>
     </div>

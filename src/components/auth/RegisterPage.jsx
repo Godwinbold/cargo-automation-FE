@@ -1,15 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { name_CONFIGS } from "../../constants/configFile";
 import { useRegisterAirlineUser } from "../../hooks/useAuth";
+import { useGetAllAirlines } from "../../hooks/useGeneral";
+import AirlineSelection from "./AirlineSelection";
 import { toast } from "sonner";
 
 const RegisterPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const nameSlug = searchParams.get("name") || "codiv";
+  const nameSlug = searchParams.get("name") || "";
   const airlineId = searchParams.get("airlineId");
+
+  const { data: airlinesData, isLoading: isLoadingAirlines } = useGetAllAirlines({
+    enabled: (!nameSlug && !!airlineId) || (!nameSlug && !airlineId),
+  });
 
   const { mutate: registerUser, isPending: isLoading } =
     useRegisterAirlineUser();
@@ -20,15 +26,7 @@ const RegisterPage = () => {
     }
   }, [airlineId]);
 
-  const config = name_CONFIGS[nameSlug];
-
-  if (!config) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Invalid name. <a href="/partners">Go back</a>
-      </div>
-    );
-  }
+  const config = useMemo(() => name_CONFIGS[nameSlug], [nameSlug]);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -45,6 +43,27 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+
+  if (isLoadingAirlines && !nameSlug) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3DA5E0]"></div>
+      </div>
+    );
+  }
+
+  if (!config) {
+    if (!nameSlug && !airlineId && !isLoadingAirlines && airlinesData?.data) {
+      return (
+        <AirlineSelection airlines={airlinesData.data} type="register" />
+      );
+    }
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Invalid partner portal. <a href="/" className="ml-1 text-blue-600 font-bold hover:underline">Go back to home</a>
+      </div>
+    );
+  }
 
   const validateField = (name, value) => {
     let error = "";
