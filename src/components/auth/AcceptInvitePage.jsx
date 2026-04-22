@@ -2,23 +2,25 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { name_CONFIGS } from "../../constants/configFile";
-import { useRegisterAirlineUser } from "../../hooks/useAuth";
 import { useGetAllAirlines } from "../../hooks/useGeneral";
-import AirlineSelection from "./AirlineSelection";
+import { useAcceptInvite } from "../../hooks/useAuth";
+import airlineMetadata from "../landing/AirlineMetadata";
 import { toast } from "sonner";
 
-const RegisterPage = () => {
+const AcceptInvitePage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const nameSlug = searchParams.get("name") || "";
+  
+  const emailParam = searchParams.get("email") || "";
+  const tokenParam = searchParams.get("token") || "";
+  const roleParam = searchParams.get("role") || "";
   const airlineId = searchParams.get("airlineId");
 
   const { data: airlinesData, isLoading: isLoadingAirlines } = useGetAllAirlines({
-    enabled: (!nameSlug && !!airlineId) || (!nameSlug && !airlineId),
+    enabled: !!airlineId,
   });
 
-  const { mutate: registerUser, isPending: isLoading } =
-    useRegisterAirlineUser();
+  const { mutateAsync: acceptInvite, isPending: isLoading } = useAcceptInvite();
 
   useEffect(() => {
     if (airlineId) {
@@ -26,13 +28,23 @@ const RegisterPage = () => {
     }
   }, [airlineId]);
 
-  const config = useMemo(() => name_CONFIGS[nameSlug], [nameSlug]);
+  const config = useMemo(() => {
+    let slug = searchParams.get("name");
+    if (!slug && airlineId && airlinesData?.data) {
+      const airline = airlinesData.data.find(a => a.id === airlineId);
+      if (airline) {
+        const meta = airlineMetadata[airline.airlineName];
+        slug = meta ? meta.slug : airline.airlineName.toLowerCase().replace(/\s+/g, "");
+      }
+    }
+    return name_CONFIGS[slug];
+  }, [searchParams, airlineId, airlinesData]);
 
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     middleName: "",
-    email: "",
+    email: emailParam,
     phoneNumber: "",
     idNumber: "",
     password: "",
@@ -44,7 +56,7 @@ const RegisterPage = () => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
-  if (isLoadingAirlines && !nameSlug) {
+  if (isLoadingAirlines) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3DA5E0]"></div>
@@ -52,15 +64,10 @@ const RegisterPage = () => {
     );
   }
 
-  if (!config) {
-    if (!nameSlug && !airlineId && !isLoadingAirlines && airlinesData?.data) {
-      return (
-        <AirlineSelection airlines={airlinesData.data} type="register" />
-      );
-    }
+  if (!config && !isLoadingAirlines && airlinesData?.data) {
     return (
       <div className="flex items-center justify-center h-screen">
-        Invalid partner portal. <a href="/" className="ml-1 text-blue-600 font-bold hover:underline">Go back to home</a>
+        Invalid partner portal or missing airline ID. <a href="/" className="ml-1 text-blue-600 font-bold hover:underline">Go back to home</a>
       </div>
     );
   }
@@ -127,7 +134,7 @@ const RegisterPage = () => {
     }));
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
 
     const allTouched = Object.keys(formData).reduce((acc, key) => {
@@ -142,43 +149,56 @@ const RegisterPage = () => {
       return;
     }
 
-    if (!airlineId) {
-      toast.error("Airline ID missing. Please return to partners page.");
+    if (!airlineId || !tokenParam) {
+      toast.error("Invalid invite link. Missing necessary parameters.");
       return;
     }
+    
+    // As per user requirement payload:
+    const payload = {
+      email: formData.email,
+      token: tokenParam,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      middleName: formData.middleName,
+      phoneNumber: formData.phoneNumber,
+      idNumber: formData.idNumber,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+      airlineId: airlineId,
+      role: roleParam || "USER"
+    };
 
-    // Prepare data for API (excluding confirmPassword)
-    const { confirmPassword, ...userData } = formData;
-
-    registerUser(
-      { airlineId, userData },
-      {
-        onSuccess: (response) => {
-          toast.success("Account created successfully!");
-          // Navigation logic here - usually to login or verify email
-          setTimeout(() => {
-            navigate(`${config.loginLink}&airlineId=${airlineId}`);
-          }, 2000);
-        },
-        onError: (error) => {
-          const message =
-            error.response?.data?.errors?.[0]?.message ||
-            error.response?.data?.message ||
-            "Registration failed";
-          toast.error(message);
-        },
-      },
-    );
+    try {
+      await acceptInvite(payload);
+      
+      toast.success("Account created successfully!");
+      setTimeout(() => {
+        navigate(`${config?.loginLink || "/login"}&airlineId=${airlineId}`);
+      }, 2000);
+    } catch (error) {
+      const message =
+        error?.response?.data?.errors?.[0]?.message ||
+        error?.response?.data?.message ||
+        "Registration failed";
+      toast.error(message);
+    }
   };
 
   const isFormValid =
-    Object.keys(formData).every((key) => formData[key]) &&
+    Object.keys(formData).every((key) => {
+      if (key === "middleName") return true; // optional
+      return formData[key];
+    }) &&
     Object.keys(errors).every((key) => !errors[key]);
+
+  // config might be undefined while loading
+  const customConfig = config || { primaryColor: "#3DA5E0", name: "Airline", logoSrc: "" };
 
   return (
     <div
       className="min-h-screen w-full py-10 bg-[url('/images/loginbg.png')] bg-cover bg-center flex items-center justify-center p-4 relative"
-      style={{ "--primary-color": config.primaryColor }}
+      style={{ "--primary-color": customConfig.primaryColor }}
     >
       <Link
         to="/"
@@ -188,15 +208,17 @@ const RegisterPage = () => {
         <span>Back to Home</span>
       </Link>
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8">
-        <div className="flex justify-center mb-6">
-          <img src={config.logoSrc} alt={nameSlug} className="h-14" />
-        </div>
+        {customConfig.logoSrc && (
+          <div className="flex justify-center mb-6">
+            <img src={customConfig.logoSrc} alt={customConfig.name} className="h-14" />
+          </div>
+        )}
 
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
-          Create Account
+          Accept Invitation
         </h1>
         <p className="text-center text-gray-600 mb-8">
-          Join {config.name} today
+          Complete your profile to join {customConfig.name}
         </p>
 
         <form onSubmit={handleFormSubmit} className="space-y-4">
@@ -297,11 +319,14 @@ const RegisterPage = () => {
               <input
                 type="email"
                 name="email"
+                readOnly={!!emailParam}
                 value={formData.email}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 placeholder="you@example.com"
                 className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
+                  emailParam ? "bg-gray-100 cursor-not-allowed text-gray-600" : ""
+                } ${
                   errors.email && touched.email
                     ? "border-red-500 focus:ring-red-500"
                     : "border-gray-300 focus:ring-[var(--primary-color)]"
@@ -415,14 +440,14 @@ const RegisterPage = () => {
             disabled={isLoading || !isFormValid}
             className="w-full py-4 bg-[var(--primary-color)] text-white font-bold rounded-xl hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
           >
-            {isLoading ? "Creating Account..." : "Sign Up"}
+            {isLoading ? "Creating Account..." : "Accept Invite & Register"}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-8">
           Already have an account?{" "}
           <Link
-            to={`/login?name=${nameSlug}&airlineId=${airlineId}`}
+            to={`/login${config ? config.loginLink.replace("/login", "") : ""}&airlineId=${airlineId}`}
             className="font-medium text-[var(--primary-color)] hover:underline"
           >
             Login here
@@ -433,4 +458,4 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage;
+export default AcceptInvitePage;

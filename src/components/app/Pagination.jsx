@@ -75,7 +75,9 @@ const Pagination = ({
                       ? "bg-black text-white border-black"
                       : "bg-white text-gray-600 border-gray-200 hover:border-gray-800"
                   }`}
-                  style={currentPage === page ? { backgroundColor: "#000" } : {}}
+                  style={
+                    currentPage === page ? { backgroundColor: "#000" } : {}
+                  }
                 >
                   {page}
                 </button>

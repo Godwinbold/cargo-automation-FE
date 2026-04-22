@@ -74,6 +74,12 @@ export const PORTAL_CONFIGS = {
     endpoint: "/api/forgot-password/codiv",
     loginLink: "/login?name=codiv",
   },
+  default: {
+    logoSrc: "/images/logo.png", // Standard Vicker/Cargo logo
+    primaryColor: "#3DA5E0",     // Standard brand blue
+    endpoint: "/api/forgot-password",
+    loginLink: "/login",
+  },
 };
 
 export const LOGIN_NAME_CONFIGS = {

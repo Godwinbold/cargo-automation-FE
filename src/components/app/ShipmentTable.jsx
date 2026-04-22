@@ -37,6 +37,7 @@ const ShipmentTable = ({
   const [modalMode, setModalMode] = useState("add"); // "add", "edit", "view"
   const [currentRowId, setCurrentRowId] = useState(null);
   const [newNote, setNewNote] = useState("");
+  const [newStatus, setNewStatus] = useState("");
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [shipmentToDelete, setShipmentToDelete] = useState(null);
@@ -105,6 +106,28 @@ const ShipmentTable = ({
         onError: (err) => {
           console.error("Error adding note:", err);
           toast.error("Failed to add note. Please try again.");
+        },
+      },
+    );
+  };
+  const saveStatus = () => {
+    if (!newStatus.trim()) return;
+
+    addNoteMutation(
+      {
+        airlineId,
+        id: currentRowId,
+        data: { status: newStatus },
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries(["shipments", airlineId]);
+          toast.success("Status changed successfully");
+          closeModal();
+        },
+        onError: (err) => {
+          console.error("Error changing status:", err);
+          toast.error("Failed to change status. Please try again.");
         },
       },
     );
@@ -239,6 +262,13 @@ const ShipmentTable = ({
                           >
                             <MessageSquarePlus className="w-4 h-4 text-green-500" />
                             Add Note
+                          </button>
+                          <button
+                            onClick={() => saveStatus(item.id)}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <MessageSquarePlus className="w-4 h-4 text-green-500" />
+                            Change Status
                           </button>
                           <button
                             onClick={() => {

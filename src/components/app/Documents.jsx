@@ -170,7 +170,11 @@ const Documents = ({ color, name }) => {
           <div className="h-full flex flex-col">
             <div className="flex-1 overflow-auto">
               <DocumentsTable
-                data={documentItems}
+                data={[...documentItems].sort(
+                  (a, b) =>
+                    new Date(b.createdDate || b.date || 0) -
+                    new Date(a.createdDate || a.date || 0)
+                )}
                 color={color}
                 airlineId={airlineId}
                 currentPage={currentPage}

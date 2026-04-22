@@ -3,7 +3,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext";
 import { ArrowLeft, Home } from "lucide-react";
 
-const DashboardHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
+const DashboardHeader = ({ mobileMenuOpen, setMobileMenuOpen, name }) => {
+  const getPortalName = (name) => {
+    const mapping = {
+      cotedivoire: "codiv",
+      "south-africa": "southafrica",
+      rwanda: "rwandair",
+    };
+    return mapping[name] || name;
+  };
+
   const { user, logout } = useAuthContext();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -108,9 +117,9 @@ const DashboardHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
                 <Link
-                  to={`#${
+                  to={`/change-password?name=${getPortalName(name)}${
                     localStorage.getItem("airlineId")
-                      ? `?airlineId=${localStorage.getItem("airlineId")}`
+                      ? `&airlineId=${localStorage.getItem("airlineId")}`
                       : ""
                   }`}
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
@@ -118,7 +127,7 @@ const DashboardHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
                   Change Password
                 </Link>
                 <Link
-                  to="/forgot-password"
+                  to={`/forgot-password?name=${getPortalName(name)}`}
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                 >
                   Forgot Password

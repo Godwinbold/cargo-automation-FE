@@ -23,7 +23,9 @@ const FilteredResult = ({ isLoading, data }) => {
   const stats = [
     {
       title: "Total Shipments",
-      value: isLoading ? "..." : (resultData.totalShipments || 0).toLocaleString(),
+      value: isLoading
+        ? "..."
+        : (resultData.totalShipments || 0).toLocaleString(),
       change: "+12.5% from last month",
       isPositive: true,
       icon: Plane,
