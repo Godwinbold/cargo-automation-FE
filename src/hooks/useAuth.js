@@ -8,6 +8,13 @@ export const useRegisterAirlineUser = () => {
   });
 };
 
+export const useAcceptInvite = () => {
+  return useMutation({
+    mutationFn: (payload) => authApi.acceptInvite(payload),
+  });
+};
+
+
 export const useLoginAirlineUser = () => {
   return useMutation({
     mutationFn: ({ airlineId, credentials }) =>
@@ -62,6 +69,7 @@ export const useChangePassword = () => {
 export const useAuth = () => {
   return {
     useRegisterAirlineUser,
+    useAcceptInvite,
     useLoginAirlineUser,
     useRegisterAdmin,
     useRegisterExecutive,

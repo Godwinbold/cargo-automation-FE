@@ -3,6 +3,7 @@ import Home from "./components/landing/Home";
 import Login from "./pages/auth/Login";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import Register from "./pages/auth/Register";
+import AcceptInvite from "./pages/auth/AcceptInvite";
 import Dashboard from "./pages/app/Dashboard";
 import Documents from "./components/app/Documents";
 import ManageShipping from "./components/app/ManageShipping";
@@ -14,6 +15,12 @@ import ExecutiveForgotPasswordPage from "./components/auth/ExecutiveForgotPasswo
 import ExecutiveLayout from "./components/app/ExecutiveLayout";
 import ExecutiveAnalytical from "./components/app/ExecutiveAnalytical";
 import AuthGuard from "./components/auth/AuthGuard";
+import AdminLogin from "./components/auth/AdminLogin";
+import AdminLayout from "./components/app/admin/AdminLayout";
+import AdminDashboard from "./components/app/admin/AdminDashboard";
+import AdminAirlines from "./components/app/admin/AdminAirlines";
+import NotFound from "./pages/NotFound";
+import ChangePasswordPage from "./components/auth/ChangePassword";
 
 const AppRoutes = () => {
   return (
@@ -22,7 +29,9 @@ const AppRoutes = () => {
         <Route index element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/executive-login" element={<ExecutiveLogin />} />
 
         <Route path="/executive-signup" element={<ExecutiveSignup />} />
@@ -40,6 +49,20 @@ const AppRoutes = () => {
         >
           <Route index element={<ExecutiveDashboard />} />
           <Route path="analytical" element={<ExecutiveAnalytical />} />
+        </Route>
+
+        <Route path="/admin-login" element={<AdminLogin />} />
+
+        <Route
+          path="/admin-dashboard"
+          element={
+            <AuthGuard allowedRoles={["ADMIN"]}>
+              <AdminLayout />
+            </AuthGuard>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="airlines" element={<AdminAirlines />} />
         </Route>
 
         <Route
@@ -135,7 +158,7 @@ const AppRoutes = () => {
             element={<Documents color={"#045195"} name="rwanda" />}
           />
         </Route>
-        <Route path="*" element={<h1>404 - Page Not Found</h1>} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </main>
   );

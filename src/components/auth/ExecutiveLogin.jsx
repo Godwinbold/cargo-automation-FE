@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useLoginAirlineUser } from "../../hooks/useAuth";
-import { useGetAllAirlines } from "../../hooks/useGeneral";
 import { toast } from "sonner";
 import { SaveToLocalStorage } from "../../utils/getFromLocals";
 import { useAuthContext } from "../../context/AuthContext";
@@ -11,28 +10,21 @@ const ExecutiveLogin = () => {
   const { login } = useAuthContext();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const urlAirlineId = searchParams.get("airlineId");
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    airlineId: urlAirlineId || "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({
     email: "",
     password: "",
-    airlineId: "",
   });
   const [touched, setTouched] = useState({
     email: false,
     password: false,
-    airlineId: false,
   });
   const { mutate: loginUser, isPending: isLoading } = useLoginAirlineUser();
-  const { data: airlinesData, isLoading: isLoadingAirlines } =
-    useGetAllAirlines();
-  const airlines = airlinesData?.data || [];
 
   // Validate single field
   const validateField = (name, value) => {
@@ -49,10 +41,6 @@ const ExecutiveLogin = () => {
         error = "Password must be at least 8 characters";
     }
 
-    if (name === "airlineId" && !urlAirlineId) {
-      if (!value) error = "Airline is required";
-    }
-
     return error;
   };
 
@@ -60,14 +48,10 @@ const ExecutiveLogin = () => {
   const validateForm = () => {
     const emailError = validateField("email", formData.email);
     const passwordError = validateField("password", formData.password);
-    const airlineError = !urlAirlineId
-      ? validateField("airlineId", formData.airlineId)
-      : "";
 
     const newErrors = {
       email: emailError,
       password: passwordError,
-      airlineId: airlineError,
     };
     setErrors(newErrors);
     return newErrors;
@@ -100,7 +84,7 @@ const ExecutiveLogin = () => {
     e.preventDefault();
 
     // Mark all fields as touched
-    setTouched({ email: true, password: true, airlineId: true });
+    setTouched({ email: true, password: true });
 
     // Validate everything
     const currentErrors = validateForm();
@@ -111,16 +95,8 @@ const ExecutiveLogin = () => {
       return; // Stop submission
     }
 
-    const targetAirlineId = urlAirlineId || formData.airlineId;
-
-    if (!targetAirlineId) {
-      toast.error("Airline ID missing.");
-      return;
-    }
-
     loginUser(
       {
-        airlineId: targetAirlineId,
         credentials: { email: formData.email, password: formData.password },
       },
       {
@@ -142,9 +118,7 @@ const ExecutiveLogin = () => {
           }
 
           setTimeout(() => {
-            navigate(
-              targetAirlineId ? `/executive-dashboard` : "/executive-dashboard",
-            );
+            navigate("/executive-dashboard");
           }, 1000);
         },
         onError: (error) => {
@@ -162,13 +136,18 @@ const ExecutiveLogin = () => {
   const isFormValid =
     formData.email &&
     formData.password &&
-    (!urlAirlineId ? formData.airlineId : true) &&
     !errors.email &&
-    !errors.password &&
-    !errors.airlineId;
+    !errors.password;
 
   return (
-    <div className="flex items-center bg-[url('/images/loginbg.png')] bg-cover bg-center justify-center h-screen">
+    <div className="flex items-center bg-[url('/images/loginbg.png')] bg-cover bg-center justify-center h-screen relative">
+      <Link
+        to="/"
+        className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md transition-all z-50 font-medium text-sm border border-white/20 hover:border-white/40"
+      >
+        <ArrowLeft size={16} />
+        <span>Back to Home</span>
+      </Link>
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 md:p-8 relative z-10">
         <div className="flex justify-center mb-6">
           <img
@@ -208,37 +187,6 @@ const ExecutiveLogin = () => {
               <p className="mt-1 text-xs text-red-600">{errors.email}</p>
             )}
           </div>
-
-          {/* Airline Select (if not in URL) */}
-          {!urlAirlineId && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select Airline
-              </label>
-              <select
-                name="airlineId"
-                value={formData.airlineId}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                disabled={isLoadingAirlines}
-                className={`w-full px-3 h-[48px] border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                  errors.airlineId && touched.airlineId
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-[var(--primary-color)]"
-                }`}
-              >
-                <option value="">Select Airline</option>
-                {airlines.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.airlineName}
-                  </option>
-                ))}
-              </select>
-              {errors.airlineId && touched.airlineId && (
-                <p className="mt-1 text-xs text-red-600">{errors.airlineId}</p>
-              )}
-            </div>
-          )}
 
           {/* Password Field */}
           <div>

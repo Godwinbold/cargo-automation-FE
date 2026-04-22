@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useRegisterExecutive } from "../../hooks/useAuth";
 import { useGetAllAirlines } from "../../hooks/useGeneral";
@@ -200,8 +200,15 @@ const ExecutiveSignup = () => {
   };
 
   return (
-    <div className="min-h-screen w-full py-8 bg-[url('/images/loginbg.png')] bg-fixed bg-cover bg-center flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8  overflow-y-auto custom-scrollbar">
+    <div className="min-h-screen w-full py-8 bg-[url('/images/loginbg.png')] bg-fixed bg-cover bg-center flex items-center justify-center p-4 relative">
+      <Link
+        to="/"
+        className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md transition-all z-50 font-medium text-sm border border-white/20 hover:border-white/40"
+      >
+        <ArrowLeft size={16} />
+        <span>Back to Home</span>
+      </Link>
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8 overflow-y-auto custom-scrollbar relative z-10">
         <div className="flex justify-center mb-8">
           <img src="/icons/logo.svg" alt="logo" className="h-14" />
         </div>

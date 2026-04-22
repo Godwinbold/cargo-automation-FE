@@ -102,7 +102,11 @@ const ManageShipping = ({ color, name }) => {
           <>
             <ShipmentTable
               color={color}
-              data={shipments.data.items}
+              data={[...shipments.data.items].sort(
+                (a, b) =>
+                  new Date(b.createdDate || b.date || 0) -
+                  new Date(a.createdDate || a.date || 0)
+              )}
               airlineId={airlineId}
               onOpenCreateModal={handleCreateShipment}
               currentPage={currentPage}

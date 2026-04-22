@@ -22,6 +22,11 @@ const AuthGuard = ({ children, allowedRoles = [] }) => {
       return <Navigate to="/executive-login" state={{ from: location }} replace />;
     }
     
+    // If it's an admin route, redirect to admin-login
+    if (location.pathname.startsWith("/admin")) {
+      return <Navigate to="/admin-login" state={{ from: location }} replace />;
+    }
+    
     // Default to standard login, preserving airlineId if present
     const loginPath = airlineId ? `/login?airlineId=${airlineId}` : "/login";
     return <Navigate to={loginPath} state={{ from: location }} replace />;

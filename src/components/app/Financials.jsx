@@ -146,7 +146,11 @@ const Financials = ({ color, name }) => {
             <div className="flex-1 overflow-auto">
               <FinancialTable
                 color={color}
-                data={financialItems}
+                data={[...financialItems].sort(
+                  (a, b) =>
+                    new Date(b.createdDate || b.date || 0) -
+                    new Date(a.createdDate || a.date || 0)
+                )}
                 airlineId={airlineId}
                 currentPage={currentPage}
                 totalPages={totalPages}
