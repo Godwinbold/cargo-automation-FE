@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { CheckCircle, XCircle, ArrowLeft, Mail } from "lucide-react";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { PORTAL_CONFIGS } from "../../constants/configFile";
 import authApi from "../../api/auth";
@@ -18,14 +18,10 @@ const ForgotPasswordPage = () => {
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [email, setEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showNewPass, setShowNewPass] = useState(false);
-  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [apiError, setApiError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
 
   if (!config) {
     return (
@@ -43,50 +39,23 @@ const ForgotPasswordPage = () => {
     const errs = {};
     if (!email) errs.email = "Email is required";
     else if (!/^\S+@\S+\.\S+$/.test(email)) errs.email = "Invalid email format";
-
-    if (!newPassword) errs.newPassword = "New password is required";
-    else if (newPassword.length < 8)
-      errs.newPassword = "Must be at least 8 characters";
-
-    if (confirmPassword !== newPassword)
-      errs.confirmPassword = "Passwords do not match";
-
     return errs;
   };
 
   const handleBlur = (field) =>
     setTouched((prev) => ({ ...prev, [field]: true }));
 
-  const clearMessages = () => {
-    setApiError("");
-    setSuccessMsg("");
-  };
-
-  // ── Step 3: Reset Password ────────────────────────────────────────────────
-  const { mutate: resetPassword, isPending: isResetting } = useMutation({
-    mutationFn: () => {
-      // Automatically pull token from localStorage as requested
-      const token =
-        localStorage.getItem("reset_token") ||
-        localStorage.getItem("access_token") ||
-        "";
-
-      return authApi.forgotPassword({
-        email,
-        newPassword,
-        token: JSON.parse(token),
-      });
-    },
+  // ── Mutation ──────────────────────────────────────────────────────────────
+  const { mutate: requestReset, isPending } = useMutation({
+    mutationFn: (data) => authApi.forgotPassword(data),
     onSuccess: () => {
-      setSuccessMsg("Password reset successfully! Redirecting to login…");
-      setTimeout(() => {
-        navigate(loginUrl);
-      }, 2000);
+      setIsSubmitted(true);
+      setApiError("");
     },
     onError: (err) => {
       setApiError(
         err?.response?.data?.message ||
-          "Failed to reset password. Please check your credentials or token.",
+          "Failed to send reset link. Please verify your email and try again.",
       );
     },
   });
@@ -95,191 +64,147 @@ const ForgotPasswordPage = () => {
     e.preventDefault();
     const currentErrors = validate();
     setErrors(currentErrors);
-    setTouched({ email: true, newPassword: true, confirmPassword: true });
+    setTouched({ email: true });
 
     if (Object.keys(currentErrors).length > 0) return;
 
-    clearMessages();
-    resetPassword();
+    requestReset({ email });
   };
-
-  // ── Shared banner ─────────────────────────────────────────────────────────
-  const Banner = () => (
-    <>
-      {successMsg && (
-        <div className="flex items-center gap-2 mb-5 p-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm">
-          <CheckCircle size={15} className="shrink-0" />
-          {successMsg}
-        </div>
-      )}
-      {apiError && (
-        <div className="flex items-center gap-2 mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
-          <XCircle size={15} className="shrink-0" />
-          {apiError}
-        </div>
-      )}
-    </>
-  );
 
   return (
     <div
-      className="h-screen w-full bg-[url('/images/loginbg.png')] bg-cover bg-center flex items-center justify-center p-4"
+      className="h-screen w-full bg-[url('/images/loginbg.png')] bg-cover bg-center flex items-center justify-center p-4 font-sans"
       style={{ "--primary-color": config.primaryColor }}
     >
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+      <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/50 p-10 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[var(--primary-color)] opacity-[0.03] rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-[var(--primary-color)] opacity-[0.03] rounded-full blur-3xl" />
+
         {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <img src={config.logoSrc} alt={nameSlug} className="h-14" />
+        <div className="flex justify-center mb-10">
+          <div className="p-4 bg-white rounded-2xl shadow-sm border border-gray-50">
+            <img
+              src={config.logoSrc}
+              alt={nameSlug}
+              className="h-12 object-contain"
+            />
+          </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">
-          Forgot Password?
-        </h1>
-        <p className="text-center text-gray-500 mb-6 text-sm">
-          Please enter your email and your new password.
-        </p>
-
-        <Banner />
-
-        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-          {/* Email Field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Email Address
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                clearMessages();
-              }}
-              onBlur={() => handleBlur("email")}
-              placeholder="you@example.com"
-              className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm ${
-                errors.email && touched.email
-                  ? "border-red-400 focus:ring-red-300"
-                  : "border-gray-200 focus:ring-[var(--primary-color)]"
-              }`}
-            />
-            {errors.email && touched.email && (
-              <p className="mt-1 text-xs text-red-600">{errors.email}</p>
-            )}
-          </div>
-
-          {/* New Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              New Password
-            </label>
-            <div className="relative">
-              <input
-                type={showNewPass ? "text" : "password"}
-                value={newPassword}
-                onChange={(e) => {
-                  setNewPassword(e.target.value);
-                  clearMessages();
-                }}
-                onBlur={() => handleBlur("newPassword")}
-                placeholder="••••••••"
-                className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm ${
-                  errors.newPassword && touched.newPassword
-                    ? "border-red-400 focus:ring-red-300"
-                    : "border-gray-200 focus:ring-[var(--primary-color)]"
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowNewPass((p) => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-              >
-                {showNewPass ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            {errors.newPassword && touched.newPassword && (
-              <p className="mt-1 text-xs text-red-600">{errors.newPassword}</p>
-            )}
-          </div>
-
-          {/* Confirm Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Confirm New Password
-            </label>
-            <div className="relative">
-              <input
-                type={showConfirmPass ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  clearMessages();
-                }}
-                onBlur={() => handleBlur("confirmPassword")}
-                placeholder="••••••••"
-                className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm ${
-                  errors.confirmPassword && touched.confirmPassword
-                    ? "border-red-400 focus:ring-red-300"
-                    : "border-gray-200 focus:ring-[var(--primary-color)]"
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPass((p) => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-              >
-                {showConfirmPass ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            {errors.confirmPassword && touched.confirmPassword && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.confirmPassword}
+        {!isSubmitted ? (
+          <>
+            <div className="text-center mb-10">
+              <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-3">
+                Forgot Password?
+              </h1>
+              <p className="text-gray-500 font-medium text-sm leading-relaxed max-w-[280px] mx-auto">
+                No worries! Enter your email address below and we'll send you a
+                link to reset it.
               </p>
+            </div>
+
+            {apiError && (
+              <div className="flex items-center gap-3 mb-8 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-xs font-bold animate-in fade-in slide-in-from-top-2 duration-300">
+                <XCircle size={18} className="shrink-0" />
+                {apiError}
+              </div>
             )}
+
+            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">
+                  Email Address
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[var(--primary-color)] transition-colors">
+                    <Mail size={18} />
+                  </div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => handleBlur("email")}
+                    placeholder="Enter your registered email"
+                    className={`w-full pl-12 pr-4 py-4 bg-gray-50/50 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-[var(--primary-color)]/10 transition-all text-sm font-medium ${
+                      errors.email && touched.email
+                        ? "border-red-200 bg-red-50/30"
+                        : "border-gray-100 focus:border-[var(--primary-color)]"
+                    }`}
+                  />
+                </div>
+                {errors.email && touched.email && (
+                  <p className="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-wider px-1 animate-in fade-in duration-300">
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isPending}
+                className="w-full py-4 bg-[var(--primary-color)] text-white font-bold rounded-2xl shadow-lg shadow-[var(--primary-color)]/20 hover:shadow-[var(--primary-color)]/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-3"
+              >
+                {isPending ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z"
+                      />
+                    </svg>
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <span>Send Reset Link</span>
+                )}
+              </button>
+            </form>
+          </>
+        ) : (
+          <div className="text-center py-4 animate-in fade-in zoom-in duration-500">
+            <div className="w-20 h-20 bg-green-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-green-100">
+              <CheckCircle size={40} className="text-green-500" />
+            </div>
+            <h2 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">
+              Check your email
+            </h2>
+            <p className="text-gray-500 font-medium text-sm leading-relaxed mb-10 max-w-[260px] mx-auto">
+              We've sent a password reset link to{" "}
+              <span className="text-gray-900 font-bold">{email}</span>. Please
+              check your inbox.
+            </p>
+            <button
+              onClick={() => setIsSubmitted(false)}
+              className="text-[var(--primary-color)] font-bold text-xs uppercase tracking-widest hover:underline"
+            >
+              Didn't receive the email? Try again
+            </button>
           </div>
+        )}
 
-          <button
-            type="submit"
-            disabled={isResetting || !!successMsg}
-            className="w-full py-3.5 bg-[var(--primary-color)] text-white font-semibold rounded-xl hover:opacity-90 disabled:opacity-50 transition-all text-sm"
+        <div className="mt-12 pt-8 border-t border-gray-50 text-center">
+          <Link
+            to={loginUrl}
+            className="inline-flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-[var(--primary-color)] transition-colors uppercase tracking-widest"
           >
-            {isResetting ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg
-                  className="animate-spin h-4 w-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
-                  />
-                </svg>
-                Resetting…
-              </span>
-            ) : (
-              "Reset Password"
-            )}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Remembered it?{" "}
-          <a
-            href={loginUrl}
-            className="font-medium text-[var(--primary-color)] hover:underline"
-          >
+            <ArrowLeft size={14} />
             Back to Login
-          </a>
-        </p>
+          </Link>
+        </div>
       </div>
     </div>
   );

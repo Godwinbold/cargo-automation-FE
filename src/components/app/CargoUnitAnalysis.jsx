@@ -72,8 +72,8 @@ const CargoUnitAnalysis = ({ cargoUnits, isLoading }) => {
       {/* Airline Revenue Chart */}
       <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#D3EBF8]">
         <div className="mb-8">
-          <h3 className="text-[18px] font-bold text-[#1A1A1A]">Airline Performance (Revenue)</h3>
-          <p className="text-sm text-[#6B6B6B] mt-1">Comparing total revenue generated across cargo units</p>
+          <h3 className="text-[16px] md:text-[18px] font-bold text-[#1A1A1A]">Airline Performance (Revenue)</h3>
+          <p className="text-xs md:text-sm text-[#6B6B6B] mt-1">Comparing total revenue generated across cargo units</p>
         </div>
 
         <div className="h-[300px] w-full mt-4">
@@ -81,14 +81,14 @@ const CargoUnitAnalysis = ({ cargoUnits, isLoading }) => {
             <BarChart
               layout="vertical"
               data={revenueByAirline}
-              margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+              margin={{ top: 5, right: 30, left: window.innerWidth < 768 ? 10 : 40, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F0F5F9" />
               <XAxis 
                 type="number" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: "#94A3B8", fontSize: 12 }}
+                tick={{ fill: "#94A3B8", fontSize: 10 }}
                 tickFormatter={(val) => `₦${val}M`}
               />
               <YAxis 
@@ -96,8 +96,8 @@ const CargoUnitAnalysis = ({ cargoUnits, isLoading }) => {
                 dataKey="name" 
                 axisLine={false} 
                 tickLine={false} 
-                width={120}
-                tick={{ fill: "#1A1A1A", fontSize: 12, fontWeight: 500 }}
+                width={window.innerWidth < 768 ? 80 : 120}
+                tick={{ fill: "#1A1A1A", fontSize: 10, fontWeight: 500 }}
               />
               <Tooltip content={<CustomTooltipRevenue />} cursor={{ fill: "#F8FAFC" }} />
               <Bar 
@@ -114,8 +114,8 @@ const CargoUnitAnalysis = ({ cargoUnits, isLoading }) => {
       {/* Shipment Distribution */}
       <div className="bg-white p-6 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#D3EBF8]">
         <div className="mb-8">
-          <h3 className="text-[18px] font-bold text-[#1A1A1A]">Shipment Share</h3>
-          <p className="text-sm text-[#6B6B6B] mt-1">Volume distribution by cargo unit</p>
+          <h3 className="text-[16px] md:text-[18px] font-bold text-[#1A1A1A]">Shipment Share</h3>
+          <p className="text-xs md:text-sm text-[#6B6B6B] mt-1">Volume distribution by cargo unit</p>
         </div>
 
         <div className="h-[260px] w-full flex items-center justify-center">

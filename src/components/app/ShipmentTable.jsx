@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+import ReactDOM from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Pagination from "./Pagination";
@@ -15,6 +16,127 @@ import {
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import CreateFinancialsModal from "./CreateFinancialsModal";
 import UploadDocumentModal from "./UploadDocumentModal";
+
+// Action Menu Portal Component
+const ActionMenuPortal = ({
+  buttonRect,
+  onClose,
+  onView,
+  onAddNote,
+  onChangeStatus,
+  onCreateFinancials,
+  onUploadDocument,
+  onDelete,
+  item,
+}) => {
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, openUpwards: false });
+  const menuRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (!buttonRect) return;
+    const menuHeight = 280; // Approximate height of the menu
+    const spaceBelow = window.innerHeight - buttonRect.bottom;
+    const shouldOpenUpwards = spaceBelow < menuHeight;
+    setMenuPos({
+      top: shouldOpenUpwards
+        ? buttonRect.top - menuHeight - 8
+        : buttonRect.bottom + 8,
+      left: buttonRect.right - 192, // 192 is w-48
+      openUpwards: shouldOpenUpwards,
+    });
+  }, [buttonRect]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) onClose();
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", onClose, true);
+    window.addEventListener("resize", onClose);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", onClose, true);
+      window.removeEventListener("resize", onClose);
+    };
+  }, [onClose]);
+
+  return ReactDOM.createPortal(
+    <div
+      ref={menuRef}
+      style={{
+        position: "fixed",
+        top: `${menuPos.top}px`,
+        left: `${menuPos.left}px`,
+      }}
+      className={`w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-[9999] animate-in fade-in zoom-in duration-200 ${
+        menuPos.openUpwards ? "origin-bottom-right" : "origin-top-right"
+      }`}
+    >
+      <button
+        onClick={() => {
+          onView(item.id);
+          onClose();
+        }}
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        <Eye className="w-4 h-4 text-blue-500" />
+        View Details
+      </button>
+      <button
+        onClick={() => {
+          onAddNote(item.id);
+          onClose();
+        }}
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        <MessageSquarePlus className="w-4 h-4 text-green-500" />
+        Add Note
+      </button>
+      <button
+        onClick={() => {
+          onChangeStatus(item.id);
+          onClose();
+        }}
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        <MessageSquarePlus className="w-4 h-4 text-green-500" />
+        Change Status
+      </button>
+      <button
+        onClick={() => {
+          onCreateFinancials(item);
+          onClose();
+        }}
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        <CircleDollarSign className="w-4 h-4 text-orange-500" />
+        Create Financials
+      </button>
+      <button
+        onClick={() => {
+          onUploadDocument(item);
+          onClose();
+        }}
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        <FileUp className="w-4 h-4 text-purple-500" />
+        Upload Document
+      </button>
+      <div className="h-px bg-gray-100 my-1" />
+      <button
+        onClick={() => {
+          onDelete(item);
+          onClose();
+        }}
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+      >
+        <Trash2 className="w-4 h-4" />
+        Delete Shipment
+      </button>
+    </div>,
+    document.body,
+  );
+};
 
 const ShipmentTable = ({
   color,
@@ -39,23 +161,18 @@ const ShipmentTable = ({
   const [newNote, setNewNote] = useState("");
   const [newStatus, setNewStatus] = useState("");
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const [activeMenuDoc, setActiveMenuDoc] = useState(null);
+  const [buttonRect, setButtonRect] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [shipmentToDelete, setShipmentToDelete] = useState(null);
   const [showFinancialsModal, setShowFinancialsModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState(null);
+  const buttonRefs = useRef({});
   const menuRef = useRef(null);
 
-  // Close menu on click outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setActiveMenuId(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // Close menu on click outside is now handled in ActionMenuPortal
+  // but we still need to clear activeMenuId when a modal opens or on item select
 
   const statusColors = {
     Accepted: "bg-[#F6FEF9] text-[#006428]",
@@ -231,77 +348,29 @@ const ShipmentTable = ({
                     {/* <td className="border-b truncate max-w-xs border-gray-300 px-4 py-3">
                       {item.notes?.length > 0 ? item.notes[0].content : ""}
                     </td> */}
-                    <td className="border-b border-gray-300 px-4 py-3 relative">
+                    <td className="border-b border-gray-300 px-4 py-3 text-center">
                       <button
-                        onClick={() =>
-                          setActiveMenuId(
-                            activeMenuId === item.id ? null : item.id,
-                          )
-                        }
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        ref={(el) => (buttonRefs.current[item.id] = el)}
+                        onClick={() => {
+                          if (activeMenuId === item.id) {
+                            setActiveMenuId(null);
+                            setButtonRect(null);
+                            setActiveMenuDoc(null);
+                          } else {
+                            const rect = buttonRefs.current[item.id]?.getBoundingClientRect();
+                            if (rect) {
+                              setButtonRect(rect);
+                              setActiveMenuId(item.id);
+                              setActiveMenuDoc(item);
+                            }
+                          }
+                        }}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors inline-block"
                         aria-label="Actions"
                       >
                         <MoreVertical className="w-5 h-5 text-gray-500" />
                       </button>
 
-                      {activeMenuId === item.id && (
-                        <div
-                          ref={menuRef}
-                          className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-30 animate-in fade-in zoom-in duration-200"
-                        >
-                          <button
-                            onClick={() => openModal(item.id, "view")}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                          >
-                            <Eye className="w-4 h-4 text-blue-500" />
-                            View Details
-                          </button>
-                          <button
-                            onClick={() => openModal(item.id, "add")}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                          >
-                            <MessageSquarePlus className="w-4 h-4 text-green-500" />
-                            Add Note
-                          </button>
-                          <button
-                            onClick={() => saveStatus(item.id)}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                          >
-                            <MessageSquarePlus className="w-4 h-4 text-green-500" />
-                            Change Status
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedShipment(item);
-                              setShowFinancialsModal(true);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                          >
-                            <CircleDollarSign className="w-4 h-4 text-orange-500" />
-                            Create Financials
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedShipment(item);
-                              setShowUploadModal(true);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                          >
-                            <FileUp className="w-4 h-4 text-purple-500" />
-                            Upload Document
-                          </button>
-                          <div className="h-px bg-gray-100 my-1" />
-                          <button
-                            onClick={() => handleDeleteClick(item)}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Delete Shipment
-                          </button>
-                        </div>
-                      )}
                     </td>
                   </tr>
                 );
@@ -309,6 +378,31 @@ const ShipmentTable = ({
             </tbody>
           </table>
         </div>
+
+        {/* Action Menu Portal */}
+        {activeMenuId && buttonRect && (
+          <ActionMenuPortal
+            item={activeMenuDoc}
+            buttonRect={buttonRect}
+            onClose={() => {
+              setActiveMenuId(null);
+              setActiveMenuDoc(null);
+              setButtonRect(null);
+            }}
+            onView={(id) => openModal(id, "view")}
+            onAddNote={(id) => openModal(id, "add")}
+            onChangeStatus={(id) => saveStatus(id)}
+            onCreateFinancials={(item) => {
+              setSelectedShipment(item);
+              setShowFinancialsModal(true);
+            }}
+            onUploadDocument={(item) => {
+              setSelectedShipment(item);
+              setShowUploadModal(true);
+            }}
+            onDelete={handleDeleteClick}
+          />
+        )}
 
         {data?.length > 0 && (
           <Pagination

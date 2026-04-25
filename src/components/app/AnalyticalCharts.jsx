@@ -82,8 +82,8 @@ const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
       <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#D3EBF8]">
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h3 className="text-[18px] font-bold text-[#1A1A1A]">Monthly Performance</h3>
-            <p className="text-sm text-[#6B6B6B] mt-1">Comparison of shipment volume and revenue trends</p>
+            <h3 className="text-[16px] md:text-[18px] font-bold text-[#1A1A1A]">Monthly Performance</h3>
+            <p className="text-xs md:text-sm text-[#6B6B6B] mt-1">Comparison of shipment volume and revenue trends</p>
           </div>
           <div className="flex items-center gap-4 bg-gray-50/50 p-2 rounded-lg">
             <div className="flex items-center gap-2">
@@ -109,27 +109,26 @@ const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
                 dataKey="name" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 500 }}
+                tick={{ fill: "#94A3B8", fontSize: 10, fontWeight: 500 }}
                 dy={12}
               />
               <YAxis 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: "#94A3B8", fontSize: 12 }}
+                tick={{ fill: "#94A3B8", fontSize: 10 }}
                 tickFormatter={(val) => val >= 1000 ? `${(val/1000).toFixed(1)}k` : val}
               />
               <Tooltip content={<CustomTooltipCombined />} cursor={{ fill: "#F8FAFC" }} />
               <Bar 
-                dataKey="shipments" 
                 fill="#007AFF" 
                 radius={[6, 6, 0, 0]} 
-                barSize={32}
+                barSize={window.innerWidth < 768 ? 16 : 32}
               />
               <Bar 
                 dataKey="revenue" 
                 fill="#28A745" 
                 radius={[6, 6, 0, 0]} 
-                barSize={32}
+                barSize={window.innerWidth < 768 ? 16 : 32}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -139,8 +138,8 @@ const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
       {/* Average Weight Comparison */}
       <div className="bg-white p-6 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#D3EBF8]">
         <div className="mb-8">
-          <h3 className="text-[18px] font-bold text-[#1A1A1A]">Average Weight</h3>
-          <p className="text-sm text-[#6B6B6B] mt-1">Current vs Previous period comparison</p>
+          <h3 className="text-[16px] md:text-[18px] font-bold text-[#1A1A1A]">Average Weight</h3>
+          <p className="text-xs md:text-sm text-[#6B6B6B] mt-1">Current vs Previous period comparison</p>
         </div>
 
         <div className="h-[320px] w-full mt-4">
@@ -154,7 +153,7 @@ const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
                 dataKey="name" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: "#94A3B8", fontSize: 13, fontWeight: 600 }}
+                tick={{ fill: "#94A3B8", fontSize: 11, fontWeight: 600 }}
                 dy={12}
               />
               <YAxis hide />
@@ -162,7 +161,7 @@ const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
               <Bar 
                 dataKey="value" 
                 radius={[12, 12, 12, 12]} 
-                barSize={64}
+                barSize={window.innerWidth < 768 ? 40 : 64}
                 background={{ fill: '#F8FAFC', radius: 12 }}
               >
                 {weightComparisonData.map((entry, index) => (

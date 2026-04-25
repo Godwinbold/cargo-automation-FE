@@ -56,7 +56,7 @@ const CargoAirlinesTable = ({ isLoading, data = [] }) => {
                     {item.totalShipments.toLocaleString()}
                   </td>
                   <td className="py-4 px-4 text-[#525252] text-sm border-b border-gray-50 font-medium">
-                    {item.totalWeightKg.toLocaleString()}kg
+                    {(item.totalWeightKg / 1000).toFixed(2)}kg
                   </td>
                   <td className="py-4 px-4 text-[#525252] text-sm border-b border-gray-50 font-bold text-[#28A745]">
                     ₦{item.totalAmount.toLocaleString()}

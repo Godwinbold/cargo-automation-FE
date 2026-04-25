@@ -29,8 +29,8 @@ const FilterAnalytic = ({ data, isLoading }) => {
     },
     {
       title: "Average Weight",
-      value: `${data?.averageWeight?.currentValue || "0"} tons`,
-      change: `${data?.averageWeight?.growthPercentage || 0}% from last month`,
+      value: `${(data?.averageWeight?.currentValue || 0).toFixed(2)} kg`,
+      change: `${(data?.averageWeight?.growthPercentage || 0).toFixed(2)}% from last month`,
       isPositive: (data?.averageWeight?.growthPercentage || 0) >= 0,
       icon: Weight,
       iconBg: "bg-[#FDDECE]",
@@ -70,7 +70,7 @@ const FilterAnalytic = ({ data, isLoading }) => {
               <span className="text-sm text-[#6B6B6B] font-medium">
                 {stat.title}
               </span>
-              <span className="text-[20px] font-semibold text-[#202127]">
+              <span className="text-[18px] md:text-[20px] font-semibold text-[#202127]">
                 {stat.value}
               </span>
               <div
