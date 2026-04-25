@@ -109,7 +109,7 @@ const ResetPassword = () => {
         <div className="flex justify-center mb-10">
           <div className="p-4 bg-white rounded-2xl shadow-sm border border-gray-50">
             <img
-              src="/images/logo.svg"
+              src="/icons/logo.svg"
               alt="logo"
               className="h-12 object-contain"
             />
