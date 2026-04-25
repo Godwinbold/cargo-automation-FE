@@ -16,8 +16,7 @@ const FilteredResult = ({ isLoading, data }) => {
   };
 
   const formatWeight = (kg = 0) => {
-    if (kg >= 1_000) return `${(kg / 1_000).toFixed(2)} tons`;
-    return `${parseFloat(kg.toFixed(2)).toLocaleString()} kg`;
+    return `${(kg / 1_000).toFixed(2)}kg`;
   };
 
   const stats = [

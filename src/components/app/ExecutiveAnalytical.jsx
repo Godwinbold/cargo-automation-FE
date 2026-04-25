@@ -71,8 +71,8 @@ const ExecutiveAnalytical = () => {
     <main className="space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="font-semibold text-[28px] text-[#1A1A1A]">Analytical</h1>
-        <p className="text-[18px] font-normal text-[#6B6B6B] mt-1">
+        <h1 className="font-semibold text-[22px] md:text-[28px] text-[#1A1A1A]">Analytical</h1>
+        <p className="text-[14px] md:text-[18px] font-normal text-[#6B6B6B] mt-1">
           Monitor your cargo operation and shipment performance
         </p>
       </div>

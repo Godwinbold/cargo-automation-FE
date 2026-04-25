@@ -4,6 +4,7 @@ import Login from "./pages/auth/Login";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import Register from "./pages/auth/Register";
 import AcceptInvite from "./pages/auth/AcceptInvite";
+import ResetPassword from "./pages/auth/ResetPassword";
 import Dashboard from "./pages/app/Dashboard";
 import Documents from "./components/app/Documents";
 import ManageShipping from "./components/app/ManageShipping";
@@ -31,6 +32,7 @@ const AppRoutes = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/password-reset" element={<ResetPassword />} />
         <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/executive-login" element={<ExecutiveLogin />} />
 

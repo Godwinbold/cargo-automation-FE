@@ -159,6 +159,9 @@ const FinancialTable = ({
 
     const value = item[key];
     if (typeof value === "number") {
+      if (key.toLowerCase().endsWith("weightkg")) {
+        return (value / 1000).toFixed(2);
+      }
       return value.toLocaleString();
     }
     return value || "-";
