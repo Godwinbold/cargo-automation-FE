@@ -1,15 +1,26 @@
 import React, { useState } from "react";
 import { X, Download, FileText, AlertCircle, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 
-const DocumentPreviewModal = ({ isOpen, onClose, document, color }) => {
+const DocumentPreviewModal = ({ isOpen, onClose, document: docData, color }) => {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [imgError, setImgError] = useState(false);
+  const [isIframeLoading, setIsIframeLoading] = useState(true);
 
-  if (!isOpen || !document) return null;
+  // Reset state when docData changes or modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setZoom(1);
+      setRotation(0);
+      setImgError(false);
+      setIsIframeLoading(true);
+    }
+  }, [isOpen, docData]);
 
-  const isImage = document.contentType?.startsWith("image/");
-  const isPdf = document.contentType === "application/pdf";
+  if (!isOpen || !docData) return null;
+
+  const isImage = docData.contentType?.startsWith("image/");
+  const isPdf = docData.contentType === "application/pdf";
 
   // Resolve the file URL — handle cloudinary:// scheme or use storagePath directly
   const resolveUrl = (path) => {
@@ -23,7 +34,7 @@ const DocumentPreviewModal = ({ isOpen, onClose, document, color }) => {
     return path;
   };
 
-  const fileUrl = resolveUrl(document.storagePath);
+  const fileUrl = resolveUrl(docData.storagePath);
 
   const formatBytes = (bytes) => {
     if (!bytes) return "";
@@ -39,13 +50,13 @@ const DocumentPreviewModal = ({ isOpen, onClose, document, color }) => {
 
   const handleDownload = () => {
     if (!fileUrl) return;
-    const link = document.createElement("a");
+    const link = window.document.createElement("a");
     link.href = fileUrl;
-    link.download = document.fileName || "document";
+    link.download = docData.fileName || "document";
     link.target = "_blank";
-    document.body.appendChild(link);
+    window.document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    window.document.body.removeChild(link);
   };
 
   return (
@@ -74,10 +85,10 @@ const DocumentPreviewModal = ({ isOpen, onClose, document, color }) => {
               </div>
               <div className="min-w-0">
                 <h3 className="text-base font-bold text-gray-900 truncate">
-                  {document.fileName || "Document Preview"}
+                  {docData.fileName || "Document Preview"}
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {document.airwayBillNumber} &bull; {formatBytes(document.fileSizeBytes)}
+                  {docData.airwayBillNumber} &bull; {formatBytes(docData.fileSizeBytes)}
                 </p>
               </div>
             </div>
@@ -145,7 +156,7 @@ const DocumentPreviewModal = ({ isOpen, onClose, document, color }) => {
               <div className="overflow-auto max-w-full max-h-full">
                 <img
                   src={fileUrl}
-                  alt={document.fileName}
+                  alt={docData.fileName}
                   onError={() => setImgError(true)}
                   style={{
                     transform: `scale(${zoom}) rotate(${rotation}deg)`,
@@ -156,13 +167,19 @@ const DocumentPreviewModal = ({ isOpen, onClose, document, color }) => {
                 />
               </div>
             ) : isPdf && !imgError ? (
-              <iframe
-                src={fileUrl}
-                title={document.fileName}
-                className="w-full rounded-lg shadow-md bg-white"
-                style={{ height: "65vh" }}
-                onError={() => setImgError(true)}
-              />
+              <div className="w-full relative" style={{ height: "65vh" }}>
+                {isIframeLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 rounded-lg">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                )}
+                <iframe
+                  src={fileUrl}
+                  title={docData.fileName}
+                  className="w-full h-full rounded-lg shadow-md bg-white border-0"
+                  onLoad={() => setIsIframeLoading(false)}
+                />
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center gap-4 text-gray-500 py-16">
                 <div className="w-24 h-24 bg-white rounded-2xl shadow flex items-center justify-center">
@@ -172,7 +189,7 @@ const DocumentPreviewModal = ({ isOpen, onClose, document, color }) => {
                   <p className="text-sm font-semibold text-gray-700">
                     {imgError ? "Unable to preview this file" : "Preview not available"}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">{document.contentType}</p>
+                  <p className="text-xs text-gray-400 mt-1">{docData.contentType}</p>
                 </div>
                 <button
                   onClick={handleDownload}
@@ -189,10 +206,10 @@ const DocumentPreviewModal = ({ isOpen, onClose, document, color }) => {
           {/* Footer Meta */}
           <div className="flex-shrink-0 px-6 py-3 border-t border-gray-100 bg-gray-50/60 flex flex-wrap gap-x-6 gap-y-1">
             {[
-              { label: "Uploaded", value: formatDate(document.uploadedAt) },
-              { label: "Shipment Date", value: document.shipmentDate ? formatDate(document.shipmentDate) : "-" },
-              { label: "Type", value: document.contentType || "-" },
-              { label: "Size", value: formatBytes(document.fileSizeBytes) || "-" },
+              { label: "Uploaded", value: formatDate(docData.uploadedAt) },
+              { label: "Shipment Date", value: docData.shipmentDate ? formatDate(docData.shipmentDate) : "-" },
+              { label: "Type", value: docData.contentType || "-" },
+              { label: "Size", value: formatBytes(docData.fileSizeBytes) || "-" },
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center gap-1.5">
                 <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}:</span>

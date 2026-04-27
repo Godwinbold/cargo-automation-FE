@@ -3,7 +3,11 @@ import ReactDOM from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Pagination from "./Pagination";
-import { useAddShipmentNote, useDeleteShipment } from "../../hooks/useShipment";
+import {
+  useAddShipmentNote,
+  useDeleteShipment,
+  useChangeShipmentStatus,
+} from "../../hooks/useShipment";
 import {
   MoreHorizontal,
   Eye,
@@ -12,10 +16,12 @@ import {
   CircleDollarSign,
   FileUp,
   MoreVertical,
+  RefreshCw,
 } from "lucide-react";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import CreateFinancialsModal from "./CreateFinancialsModal";
 import UploadDocumentModal from "./UploadDocumentModal";
+import ChangeStatusModal from "./ChangeStatusModal";
 
 // Action Menu Portal Component
 const ActionMenuPortal = ({
@@ -29,7 +35,11 @@ const ActionMenuPortal = ({
   onDelete,
   item,
 }) => {
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, openUpwards: false });
+  const [menuPos, setMenuPos] = useState({
+    top: 0,
+    left: 0,
+    openUpwards: false,
+  });
   const menuRef = useRef(null);
 
   useLayoutEffect(() => {
@@ -92,16 +102,16 @@ const ActionMenuPortal = ({
         <MessageSquarePlus className="w-4 h-4 text-green-500" />
         Add Note
       </button>
-      <button
+      {/* <button
         onClick={() => {
-          onChangeStatus(item.id);
+          onChangeStatus(item);
           onClose();
         }}
         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
       >
-        <MessageSquarePlus className="w-4 h-4 text-green-500" />
+        <RefreshCw className="w-4 h-4 text-orange-500" />
         Change Status
-      </button>
+      </button> */}
       <button
         onClick={() => {
           onCreateFinancials(item);
@@ -154,16 +164,18 @@ const ShipmentTable = ({
     useAddShipmentNote();
   const { mutate: deleteShipmentMutation, isPending: isDeleting } =
     useDeleteShipment();
+  const { mutate: changeStatusMutation, isPending: isUpdatingStatus } =
+    useChangeShipmentStatus();
 
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // "add", "edit", "view"
   const [currentRowId, setCurrentRowId] = useState(null);
   const [newNote, setNewNote] = useState("");
-  const [newStatus, setNewStatus] = useState("");
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [activeMenuDoc, setActiveMenuDoc] = useState(null);
   const [buttonRect, setButtonRect] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
   const [shipmentToDelete, setShipmentToDelete] = useState(null);
   const [showFinancialsModal, setShowFinancialsModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -227,24 +239,28 @@ const ShipmentTable = ({
       },
     );
   };
-  const saveStatus = () => {
-    if (!newStatus.trim()) return;
+  const handleStatusUpdate = (status) => {
+    if (!selectedShipment) return;
 
-    addNoteMutation(
+    changeStatusMutation(
       {
         airlineId,
-        id: currentRowId,
-        data: { status: newStatus },
+        id: selectedShipment.id,
+        data: { status },
       },
       {
         onSuccess: () => {
           queryClient.invalidateQueries(["shipments", airlineId]);
-          toast.success("Status changed successfully");
-          closeModal();
+          toast.success(`Status updated to ${status} successfully`);
+          setShowStatusModal(false);
+          setSelectedShipment(null);
         },
         onError: (err) => {
           console.error("Error changing status:", err);
-          toast.error("Failed to change status. Please try again.");
+          const message =
+            err.response?.data?.message ||
+            "Failed to change status. Please try again.";
+          toast.error(message);
         },
       },
     );
@@ -357,7 +373,10 @@ const ShipmentTable = ({
                             setButtonRect(null);
                             setActiveMenuDoc(null);
                           } else {
-                            const rect = buttonRefs.current[item.id]?.getBoundingClientRect();
+                            const rect =
+                              buttonRefs.current[
+                                item.id
+                              ]?.getBoundingClientRect();
                             if (rect) {
                               setButtonRect(rect);
                               setActiveMenuId(item.id);
@@ -370,7 +389,6 @@ const ShipmentTable = ({
                       >
                         <MoreVertical className="w-5 h-5 text-gray-500" />
                       </button>
-
                     </td>
                   </tr>
                 );
@@ -391,7 +409,10 @@ const ShipmentTable = ({
             }}
             onView={(id) => openModal(id, "view")}
             onAddNote={(id) => openModal(id, "add")}
-            onChangeStatus={(id) => saveStatus(id)}
+            onChangeStatus={(item) => {
+              setSelectedShipment(item);
+              setShowStatusModal(true);
+            }}
             onCreateFinancials={(item) => {
               setSelectedShipment(item);
               setShowFinancialsModal(true);
@@ -403,6 +424,16 @@ const ShipmentTable = ({
             onDelete={handleDeleteClick}
           />
         )}
+
+        <ChangeStatusModal
+          isOpen={showStatusModal}
+          onClose={() => setShowStatusModal(false)}
+          onConfirm={handleStatusUpdate}
+          currentStatus={selectedShipment?.statusDisplay}
+          airwayBillNumber={selectedShipment?.airwayBillNumber}
+          isUpdating={isUpdatingStatus}
+          color={color}
+        />
 
         {data?.length > 0 && (
           <Pagination

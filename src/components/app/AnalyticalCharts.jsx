@@ -12,6 +12,16 @@ import {
 } from "recharts";
 
 const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
+  const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const formatMonth = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleString("default", { month: "short" });
@@ -23,7 +33,7 @@ const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
     revenue: parseFloat((item.revenue / 1000000).toFixed(2)),
   }));
 
-  const weightComparisonData = averageWeight ? [
+  const weightComparisonData = averageWeight && averageWeight.previousValue !== undefined && averageWeight.currentValue !== undefined ? [
     { name: "Previous", value: parseFloat(averageWeight.previousValue.toFixed(2)), color: "#E0E0E0" },
     { name: "Current", value: parseFloat(averageWeight.currentValue.toFixed(2)), color: "#3DA5E0" }
   ] : [];
@@ -49,14 +59,18 @@ const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
         <div className="bg-white p-4 border border-gray-100 shadow-xl rounded-xl">
           <p className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-tight">{label}</p>
           <div className="space-y-1">
-            <div className="flex items-center justify-between gap-8">
-              <span className="text-sm font-medium text-gray-600">Shipments</span>
-              <span className="text-sm font-bold text-[#007AFF]">{payload[0].value}</span>
-            </div>
-            <div className="flex items-center justify-between gap-8">
-              <span className="text-sm font-medium text-gray-600">Revenue</span>
-              <span className="text-sm font-bold text-[#28A745]">₦{payload[1].value}M</span>
-            </div>
+            {payload[0] && (
+              <div className="flex items-center justify-between gap-8">
+                <span className="text-sm font-medium text-gray-600">Shipments</span>
+                <span className="text-sm font-bold text-[#007AFF]">{payload[0].value}</span>
+              </div>
+            )}
+            {payload[1] && (
+              <div className="flex items-center justify-between gap-8">
+                <span className="text-sm font-medium text-gray-600">Revenue</span>
+                <span className="text-sm font-bold text-[#28A745]">₦{payload[1].value}M</span>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -120,15 +134,16 @@ const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
               />
               <Tooltip content={<CustomTooltipCombined />} cursor={{ fill: "#F8FAFC" }} />
               <Bar 
+                dataKey="shipments"
                 fill="#007AFF" 
                 radius={[6, 6, 0, 0]} 
-                barSize={window.innerWidth < 768 ? 16 : 32}
+                barSize={windowWidth < 768 ? 16 : 32}
               />
               <Bar 
                 dataKey="revenue" 
                 fill="#28A745" 
                 radius={[6, 6, 0, 0]} 
-                barSize={window.innerWidth < 768 ? 16 : 32}
+                barSize={windowWidth < 768 ? 16 : 32}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -161,7 +176,7 @@ const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
               <Bar 
                 dataKey="value" 
                 radius={[12, 12, 12, 12]} 
-                barSize={window.innerWidth < 768 ? 40 : 64}
+                barSize={windowWidth < 768 ? 40 : 64}
                 background={{ fill: '#F8FAFC', radius: 12 }}
               >
                 {weightComparisonData.map((entry, index) => (
@@ -172,7 +187,7 @@ const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
           </ResponsiveContainer>
         </div>
 
-        {averageWeight && (
+        {averageWeight && averageWeight.growthPercentage !== undefined && (
           <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 uppercase">Growth</span>
             <div className={`text-sm font-bold flex items-center gap-1 ${averageWeight.growthPercentage >= 0 ? "text-[#28A745]" : "text-red-500"}`}>

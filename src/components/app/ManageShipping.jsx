@@ -92,6 +92,7 @@ const ManageShipping = ({ color, name }) => {
           status={status}
           onStatusChange={setStatus}
           color={color}
+          showAdvanced={true}
         />
       </div>
 

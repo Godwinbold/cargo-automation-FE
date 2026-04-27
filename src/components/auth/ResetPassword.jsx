@@ -14,6 +14,7 @@ import authApi from "../../api/auth";
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const timeoutRef = React.useRef(null);
 
   const email = searchParams.get("email") || "";
   const token = searchParams.get("token") || "";
@@ -28,15 +29,27 @@ const ResetPassword = () => {
   const [touched, setTouched] = useState({});
   const [apiError, setApiError] = useState("");
 
+  // Clean up timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   // ── Validation ────────────────────────────────────────────────────────────
   const validate = () => {
     const errs = {};
-    if (!newPassword) errs.newPassword = "New password is required";
-    else if (newPassword.length < 8)
+    if (!newPassword) {
+      errs.newPassword = "New password is required";
+    } else if (newPassword.length < 8) {
       errs.newPassword = "Password must be at least 8 characters";
+    }
 
-    if (confirmPassword !== newPassword)
+    if (!confirmPassword) {
+      errs.confirmPassword = "Please confirm your password";
+    } else if (confirmPassword !== newPassword) {
       errs.confirmPassword = "Passwords do not match";
+    }
 
     return errs;
   };
@@ -50,7 +63,7 @@ const ResetPassword = () => {
     onSuccess: () => {
       setIsSuccess(true);
       setApiError("");
-      setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         navigate("/login");
       }, 3000);
     },
@@ -138,7 +151,10 @@ const ResetPassword = () => {
             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
               {/* New Password */}
               <div className="space-y-2">
-                <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">
+                <label 
+                  htmlFor="newPassword"
+                  className="block text-[11px] font-black text-gray-400 uppercase tracking-widest px-1"
+                >
                   New Password
                 </label>
                 <div className="relative group">
@@ -146,6 +162,7 @@ const ResetPassword = () => {
                     <Lock size={18} />
                   </div>
                   <input
+                    id="newPassword"
                     type={showNewPass ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
@@ -160,6 +177,7 @@ const ResetPassword = () => {
                   <button
                     type="button"
                     onClick={() => setShowNewPass(!showNewPass)}
+                    aria-label={showNewPass ? "Hide password" : "Show password"}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     {showNewPass ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -174,7 +192,10 @@ const ResetPassword = () => {
 
               {/* Confirm Password */}
               <div className="space-y-2">
-                <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">
+                <label 
+                  htmlFor="confirmPassword"
+                  className="block text-[11px] font-black text-gray-400 uppercase tracking-widest px-1"
+                >
                   Confirm Password
                 </label>
                 <div className="relative group">
@@ -182,6 +203,7 @@ const ResetPassword = () => {
                     <Lock size={18} />
                   </div>
                   <input
+                    id="confirmPassword"
                     type={showConfirmPass ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -196,6 +218,7 @@ const ResetPassword = () => {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPass(!showConfirmPass)}
+                    aria-label={showConfirmPass ? "Hide password" : "Show password"}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     {showConfirmPass ? <EyeOff size={18} /> : <Eye size={18} />}
