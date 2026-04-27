@@ -47,6 +47,15 @@ export const shipmentApi = {
     return response.data;
   },
 
+  // Change shipment status
+  changeShipmentStatus: async (airlineId, id, data) => {
+    const response = await axiosInstance.post(
+      `/airlines/${airlineId}/shipments/${id}/change-status`,
+      data,
+    );
+    return response.data;
+  },
+
   // Delete a shipment
   deleteShipment: async (airlineId, id) => {
     const response = await axiosInstance.delete(

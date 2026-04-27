@@ -10,15 +10,16 @@ import { toast } from "sonner";
 const AcceptInvitePage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+
   const emailParam = searchParams.get("email") || "";
   const tokenParam = searchParams.get("token") || "";
   const roleParam = searchParams.get("role") || "";
   const airlineId = searchParams.get("airlineId");
 
-  const { data: airlinesData, isLoading: isLoadingAirlines } = useGetAllAirlines({
-    enabled: !!airlineId,
-  });
+  const { data: airlinesData, isLoading: isLoadingAirlines } =
+    useGetAllAirlines({
+      enabled: !!airlineId,
+    });
 
   const { mutateAsync: acceptInvite, isPending: isLoading } = useAcceptInvite();
 
@@ -31,10 +32,13 @@ const AcceptInvitePage = () => {
   const config = useMemo(() => {
     let slug = searchParams.get("name");
     if (!slug && airlineId && airlinesData?.data) {
-      const airline = airlinesData.data.find(a => a.id === airlineId);
+      // Use == to handle potential string/number mismatch for ID
+      const airline = airlinesData.data.find((a) => a.id == airlineId);
       if (airline) {
         const meta = airlineMetadata[airline.airlineName];
-        slug = meta ? meta.slug : airline.airlineName.toLowerCase().replace(/\s+/g, "");
+        slug = meta
+          ? meta.slug
+          : airline.airlineName.toLowerCase().replace(/\s+/g, "");
       }
     }
     return name_CONFIGS[slug];
@@ -64,10 +68,18 @@ const AcceptInvitePage = () => {
     );
   }
 
-  if (!config && !isLoadingAirlines && airlinesData?.data) {
+  if (!config && !isLoadingAirlines) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        Invalid partner portal or missing airline ID. <a href="/" className="ml-1 text-blue-600 font-bold hover:underline">Go back to home</a>
+      <div className="flex items-center justify-center h-screen flex-col gap-4">
+        <p className="text-gray-800 font-medium">
+          Invalid partner portal or missing airline ID.
+        </p>
+        <Link
+          to="/"
+          className="px-6 py-2 bg-[#3DA5E0] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity"
+        >
+          Go back to home
+        </Link>
       </div>
     );
   }
@@ -153,7 +165,7 @@ const AcceptInvitePage = () => {
       toast.error("Invalid invite link. Missing necessary parameters.");
       return;
     }
-    
+
     // As per user requirement payload:
     const payload = {
       email: formData.email,
@@ -166,15 +178,17 @@ const AcceptInvitePage = () => {
       password: formData.password,
       confirmPassword: formData.confirmPassword,
       airlineId: airlineId,
-      role: roleParam || "USER"
+      role: roleParam || "USER",
     };
 
     try {
       await acceptInvite(payload);
-      
+
       toast.success("Account created successfully!");
       setTimeout(() => {
-        navigate(`${config?.loginLink || "/login"}&airlineId=${airlineId}`);
+        const baseLogin = config?.loginLink || "/login";
+        const separator = baseLogin.includes("?") ? "&" : "?";
+        navigate(`${baseLogin}${separator}airlineId=${airlineId}`);
       }, 2000);
     } catch (error) {
       const message =
@@ -189,11 +203,14 @@ const AcceptInvitePage = () => {
     Object.keys(formData).every((key) => {
       if (key === "middleName") return true; // optional
       return formData[key];
-    }) &&
-    Object.keys(errors).every((key) => !errors[key]);
+    }) && Object.keys(errors).every((key) => !errors[key]);
 
   // config might be undefined while loading
-  const customConfig = config || { primaryColor: "#3DA5E0", name: "Airline", logoSrc: "" };
+  const customConfig = config || {
+    primaryColor: "#3DA5E0",
+    name: "Airline",
+    logoSrc: "",
+  };
 
   return (
     <div
@@ -210,7 +227,11 @@ const AcceptInvitePage = () => {
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8">
         {customConfig.logoSrc && (
           <div className="flex justify-center mb-6">
-            <img src={customConfig.logoSrc} alt={customConfig.name} className="h-14" />
+            <img
+              src={customConfig.logoSrc}
+              alt={customConfig.name}
+              className="h-14"
+            />
           </div>
         )}
 
@@ -325,7 +346,9 @@ const AcceptInvitePage = () => {
                 onBlur={handleBlur}
                 placeholder="you@example.com"
                 className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
-                  emailParam ? "bg-gray-100 cursor-not-allowed text-gray-600" : ""
+                  emailParam
+                    ? "bg-gray-100 cursor-not-allowed text-gray-600"
+                    : ""
                 } ${
                   errors.email && touched.email
                     ? "border-red-500 focus:ring-red-500"
@@ -386,7 +409,8 @@ const AcceptInvitePage = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -418,7 +442,12 @@ const AcceptInvitePage = () => {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide confirm password"
+                      : "Show confirm password"
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 >
                   {showConfirmPassword ? (
                     <EyeOff size={20} />
@@ -447,7 +476,7 @@ const AcceptInvitePage = () => {
         <p className="text-center text-sm text-gray-600 mt-8">
           Already have an account?{" "}
           <Link
-            to={`/login${config ? config.loginLink.replace("/login", "") : ""}&airlineId=${airlineId}`}
+            to={`/login?airlineId=${airlineId}${config ? `&name=${searchParams.get("name") || ""}` : ""}`}
             className="font-medium text-[var(--primary-color)] hover:underline"
           >
             Login here

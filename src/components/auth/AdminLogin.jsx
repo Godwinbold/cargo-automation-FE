@@ -9,6 +9,7 @@ import { useAuthContext } from "../../context/AuthContext";
 const AdminLogin = () => {
   const { login } = useAuthContext();
   const navigate = useNavigate();
+  const timeoutRef = React.useRef(null);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -25,6 +26,13 @@ const AdminLogin = () => {
   });
 
   const { mutate: loginUser, isPending: isLoading } = useLoginAirlineUser();
+
+  // Clean up timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   // Validate single field
   const validateField = (name, value) => {
@@ -106,7 +114,7 @@ const AdminLogin = () => {
             }
           }
 
-          setTimeout(() => {
+          timeoutRef.current = setTimeout(() => {
             navigate("/admin-dashboard");
           }, 1000);
         },
@@ -151,10 +159,14 @@ const AdminLogin = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label 
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Enter email address
             </label>
             <input
+              id="email"
               type="email"
               name="email"
               value={formData.email}
@@ -173,11 +185,15 @@ const AdminLogin = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label 
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Enter Password
             </label>
             <div className="relative">
               <input
+                id="password"
                 type={showPassword ? "text" : "password"}
                 name="password"
                 value={formData.password}
@@ -193,6 +209,7 @@ const AdminLogin = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}

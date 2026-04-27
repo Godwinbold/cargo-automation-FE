@@ -17,37 +17,49 @@ const AirlineSelection = ({ airlines, type = "login" }) => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95 duration-700 delay-200">
-          {airlines.map((airline) => {
-            const metadata = airlineMetadata[airline.airlineName] || {
-              slug: airline.airlineName.toLowerCase().replace(/\s+/g, ""),
-              image: "/icons/default.svg",
-            };
+          {airlines && airlines.length > 0 ? (
+            airlines.map((airline) => {
+              const safeName = airline?.airlineName || "Unknown Airline";
+              const metadata = airlineMetadata[safeName] || {
+                slug: safeName.toLowerCase().replace(/\s+/g, ""),
+                image: "/icons/default.svg",
+              };
 
-            return (
-              <Link
-                key={airline.id}
-                to={`/${type}?name=${metadata.slug}&airlineId=${airline.id}`}
-                className="group p-2 bg-white rounded border border-gray-300 hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 flex flex-col items-center gap-6 text-center transform hover:-translate-y-1"
-              >
-                <div className="w-24 h-24 rounded-xl bg-gray-50 flex items-center justify-center p-5 group-hover:bg-blue-50 group-hover:scale-110 transition-all duration-500 shadow-sm border border-gray-50 group-hover:border-blue-100">
-                  <img
-                    src={metadata.image}
-                    alt={airline.airlineName}
-                    className="w-full h-full object-contain filter group-hover:brightness-110 transition-all"
-                  />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-gray-900 group-hover:text-[#3DA5E0] transition-colors uppercase tracking-wider text-sm">
-                    {airline.airlineName}
-                  </h3>
-                  <div className="mt-3 flex items-center justify-center gap-2 text-[10px] font-black text-[#3DA5E0] uppercase tracking-[0.2em] transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                    <span>Access Portal</span>
-                    <span className="text-lg">→</span>
+              const queryParams = new URLSearchParams({
+                name: metadata.slug,
+                airlineId: airline.id,
+              }).toString();
+
+              return (
+                <Link
+                  key={airline.id}
+                  to={`/${type}?${queryParams}`}
+                  className="group p-2 bg-white rounded border border-gray-300 hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 flex flex-col items-center gap-6 text-center transform hover:-translate-y-1"
+                >
+                  <div className="w-24 h-24 rounded-xl bg-gray-50 flex items-center justify-center p-5 group-hover:bg-blue-50 group-hover:scale-110 transition-all duration-500 shadow-sm border border-gray-50 group-hover:border-blue-100">
+                    <img
+                      src={metadata.image}
+                      alt={safeName}
+                      className="w-full h-full object-contain filter group-hover:brightness-110 transition-all"
+                    />
                   </div>
-                </div>
-              </Link>
-            );
-          })}
+                  <div>
+                    <h3 className="font-extrabold text-gray-900 group-hover:text-[#3DA5E0] transition-colors uppercase tracking-wider text-sm">
+                      {safeName}
+                    </h3>
+                    <div className="mt-3 flex items-center justify-center gap-2 text-[10px] font-black text-[#3DA5E0] uppercase tracking-[0.2em] transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                      <span>Access Portal</span>
+                      <span className="text-lg">→</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })
+          ) : (
+            <div className="col-span-full py-12 text-center text-gray-500 font-medium">
+              No airlines available at this time.
+            </div>
+          )}
         </div>
       </div>
       <style>{`

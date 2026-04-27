@@ -67,6 +67,14 @@ export const useAddShipmentNote = () => {
   });
 };
 
+// Hook to change shipment status
+export const useChangeShipmentStatus = () => {
+  return useMutation({
+    mutationFn: ({ airlineId, id, data }) =>
+      shipmentApi.changeShipmentStatus(airlineId, id, data),
+  });
+};
+
 // Hook to delete shipment
 export const useDeleteShipment = () => {
   return useMutation({
@@ -190,6 +198,7 @@ export const useShipment = () => {
     useSearchShipments,
     useGetShipmentById,
     useAddShipmentNote,
+    useChangeShipmentStatus,
     useDeleteShipment,
     useGetDocumentById,
     useGetDocuments,

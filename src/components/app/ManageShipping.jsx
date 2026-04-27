@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import HeaderTitle from "./HeaderTitle";
 import Create from "./Create";
 import ShipmentTable from "./ShipmentTable";
-import { useCreateShipment, useGetShipments } from "../../hooks/useShipment";
+import { useCreateShipment, useFilterShipments } from "../../hooks/useShipment";
 import { GetFromLocalStorage } from "../../utils/getFromLocals";
 import { useSearchParams } from "react-router-dom";
 
@@ -24,27 +24,30 @@ const ManageShipping = ({ color, name }) => {
   const [appliedSearch, setAppliedSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [userId, setUserId] = useState("");
+  const [status, setStatus] = useState("");
 
   const handleSearch = () => {
     setAppliedSearch(searchQuery);
   };
 
-  // Reset to first page when search changes
+  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [appliedSearch, startDate, endDate, pageSize]);
+  }, [appliedSearch, startDate, endDate, userId, status, pageSize]);
 
-  // The hook is already enabled only when airlineId is truthy
   const {
     data: shipments,
     isLoading,
     error,
-  } = useGetShipments(airlineId, {
+  } = useFilterShipments(airlineId, {
     page: currentPage,
     pageSize: pageSize,
-    awbSearch: appliedSearch,
+    awb: appliedSearch,
     startDate,
     endDate,
+    userId,
+    status,
   });
 
   const handleCreateShipment = () => {
@@ -84,7 +87,12 @@ const ManageShipping = ({ color, name }) => {
           onStartDateChange={setStartDate}
           endDate={endDate}
           onEndDateChange={setEndDate}
+          userId={userId}
+          onUserIdChange={setUserId}
+          status={status}
+          onStatusChange={setStatus}
           color={color}
+          showAdvanced={true}
         />
       </div>
 
@@ -121,14 +129,14 @@ const ManageShipping = ({ color, name }) => {
             <Create
               btnAction="Shipping"
               description={
-                searchQuery || startDate || endDate
+                searchQuery || startDate || endDate || userId || status
                   ? "No shipments match your current filters."
                   : "Get started by creating a shipment."
               }
               icon={name ? `${name}-ms.png` : "rwanda-ms.png"}
               key="shipping"
               title={
-                searchQuery || startDate || endDate
+                searchQuery || startDate || endDate || userId || status
                   ? "No Match Found"
                   : "No Shipping Data"
               }

@@ -18,6 +18,7 @@ const ActionMenuPortal = ({
 
   useLayoutEffect(() => {
     if (!buttonRect) return;
+    const menuWidth = 240; // 15rem = 240px
     const menuHeight = 160;
     const spaceBelow = window.innerHeight - buttonRect.bottom;
     const shouldOpenUpwards = spaceBelow < menuHeight;
@@ -25,7 +26,7 @@ const ActionMenuPortal = ({
       top: shouldOpenUpwards
         ? buttonRect.top - menuHeight - 8
         : buttonRect.bottom + 8,
-      left: buttonRect.right - 176,
+      left: Math.max(8, buttonRect.right - menuWidth),
     });
   }, [buttonRect]);
 
@@ -46,6 +47,8 @@ const ActionMenuPortal = ({
   return ReactDOM.createPortal(
     <div
       ref={menuRef}
+      role="menu"
+      aria-orientation="vertical"
       style={{
         position: "fixed",
         top: `${menuPos.top}px`,
@@ -55,44 +58,48 @@ const ActionMenuPortal = ({
       className="bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-[9999] animate-in fade-in zoom-in duration-200"
     >
       <button
+        role="menuitem"
         onClick={() => {
           onView && onView(doc);
           onClose();
         }}
         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-all font-medium"
       >
-        <Eye className="w-4 h-4 text-green-500" />
+        <Eye className="w-4 h-4 text-green-500" aria-hidden="true" />
         View / Preview
       </button>
       <button
+        role="menuitem"
         onClick={() => {
           onDownload && onDownload(doc);
           onClose();
         }}
         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-all font-medium"
       >
-        <Download className="w-4 h-4 text-blue-500" />
+        <Download className="w-4 h-4 text-blue-500" aria-hidden="true" />
         Download
       </button>
       <button
+        role="menuitem"
         onClick={() => {
           onEdit && onEdit(doc);
           onClose();
         }}
         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-all font-medium"
       >
-        <Edit2 className="w-4 h-4 text-orange-500" />
+        <Edit2 className="w-4 h-4 text-orange-500" aria-hidden="true" />
         Edit Document
       </button>
-      <div className="h-px bg-gray-100 my-1 mx-2" />
+      <div className="h-px bg-gray-100 my-1 mx-2" aria-hidden="true" />
       <button
+        role="menuitem"
         onClick={() => {
           onDelete && onDelete(doc);
           onClose();
         }}
         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all font-medium"
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 className="w-4 h-4" aria-hidden="true" />
         Delete Document
       </button>
     </div>,
@@ -129,7 +136,9 @@ const DocumentsTable = ({
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString();
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "-";
+    return date.toLocaleDateString();
   };
 
   const formatBytes = (bytes) => {
@@ -141,7 +150,7 @@ const DocumentsTable = ({
 
   const renderCellValue = (item, sn, key) => {
     if (key === "sn") return sn;
-    if (key === "shipmentDate" || key === "uploadedAt")
+    if (key === "shipmentDate" || key === "uploadedAt" || key === "createdDate")
       return formatDate(item[key]);
     if (key === "fileSizeBytes") return formatBytes(item[key]);
     const value = item[key];
@@ -198,34 +207,37 @@ const DocumentsTable = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {data.map((item, rowIndex) => (
-                <tr
-                  key={item.id || rowIndex}
-                  className="hover:bg-gray-50 transition-colors group"
-                >
-                  {headerMapping.map((header, colIndex) => (
-                    <td
-                      key={colIndex}
-                      className="px-4 py-3 text-sm text-gray-600 border-x border-gray-100 whitespace-nowrap"
-                    >
-                      {renderCellValue(
-                        item,
-                        (currentPage - 1) * pageSize + rowIndex + 1,
-                        header.key,
-                      )}
+              {data.map((item, rowIndex) => {
+                const itemId = item.id || item.documentId || `row-${rowIndex}`;
+                const sn = ((currentPage || 1) - 1) * (pageSize || 10) + rowIndex + 1;
+                return (
+                  <tr
+                    key={itemId}
+                    className="hover:bg-gray-50 transition-colors group"
+                  >
+                    {headerMapping.map((header, colIndex) => (
+                      <td
+                        key={colIndex}
+                        className="px-4 py-3 text-sm text-gray-600 border-x border-gray-100 whitespace-nowrap"
+                      >
+                        {renderCellValue(item, sn, header.key)}
+                      </td>
+                    ))}
+                    <td className="px-4 py-3 border-l border-gray-100 sticky right-0 bg-white group-hover:bg-gray-50 z-10 text-center">
+                      <button
+                        ref={(el) => (buttonRefs.current[itemId] = el)}
+                        onClick={() => handleMenuOpen(itemId, item)}
+                        aria-label="Actions"
+                        aria-haspopup="true"
+                        aria-expanded={activeMenuId === itemId}
+                        className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                      >
+                        <MoreVertical size={18} />
+                      </button>
                     </td>
-                  ))}
-                  <td className="px-4 py-3 border-l border-gray-100 sticky right-0 bg-white group-hover:bg-gray-50 z-10 text-center">
-                    <button
-                      ref={(el) => (buttonRefs.current[item.id] = el)}
-                      onClick={() => handleMenuOpen(item.id, item)}
-                      className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
-                    >
-                      <MoreVertical size={18} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

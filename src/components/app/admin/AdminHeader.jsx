@@ -6,10 +6,27 @@ const AdminHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
   const { user, logout } = useAuthContext();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = React.useRef(null);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/admin-login");
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/admin-login");
+    } catch (error) {
+      console.error("Logout failed", error);
+      // Fallback navigate anyway
+      navigate("/admin-login");
+    }
   };
 
   return (
@@ -18,7 +35,7 @@ const AdminHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
         <button
           className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle mobile menu"
+          aria-label={mobileMenuOpen ? "Close mobile menu" : "Open mobile menu"}
         >
           <svg
             className="h-6 w-6"
@@ -49,7 +66,10 @@ const AdminHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
 
         {/* Right Side: Notifications and User Menu */}
         <div className="flex items-center justify-end space-x-4 ml-4">
-          <button className="relative p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full">
+          <button 
+            aria-label="View notifications"
+            className="relative p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
+          >
             <svg
               className="w-5 h-5"
               fill="none"
@@ -67,14 +87,17 @@ const AdminHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
           <div className="w-[1px] h-8 bg-gray-600"></div>
 
           {/* User Profile Dropdown */}
-          <div className="relative">
+          <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              aria-haspopup="true"
+              aria-expanded={isDropdownOpen}
+              aria-label="User menu"
               className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md"
             >
               <img
                 src="/icons/person.svg" // Using generic person icon
-                alt="Admin"
+                alt=""
                 className="w-8 h-8 rounded-full object-cover"
               />
 
@@ -88,6 +111,7 @@ const AdminHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -99,15 +123,20 @@ const AdminHeader = ({ mobileMenuOpen, setMobileMenuOpen }) => {
             </button>
 
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+              <div 
+                role="menu"
+                className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
+              >
                 <Link
                   to="/forgot-password"
+                  role="menuitem"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                 >
                   Forgot Password
                 </Link>
                 <button
                   onClick={handleLogout}
+                  role="menuitem"
                   className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                 >
                   Log Out
