@@ -1,7 +1,20 @@
 import React, { useState } from "react";
-import { X, Download, FileText, AlertCircle, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
+import {
+  X,
+  Download,
+  FileText,
+  AlertCircle,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+} from "lucide-react";
 
-const DocumentPreviewModal = ({ isOpen, onClose, document: docData, color }) => {
+const DocumentPreviewModal = ({
+  isOpen,
+  onClose,
+  document: docData,
+  color,
+}) => {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [imgError, setImgError] = useState(false);
@@ -71,7 +84,9 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docData, color }) => 
       <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
         <div
           className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
-          style={{ animation: "modalEntry 0.35s cubic-bezier(0.16, 1, 0.3, 1)" }}
+          style={{
+            animation: "modalEntry 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -88,7 +103,8 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docData, color }) => 
                   {docData.fileName || "Document Preview"}
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {docData.airwayBillNumber} &bull; {formatBytes(docData.fileSizeBytes)}
+                  {docData.airwayBillNumber} &bull;{" "}
+                  {formatBytes(docData.fileSizeBytes)}
                 </p>
               </div>
             </div>
@@ -170,7 +186,10 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docData, color }) => 
               <div className="w-full relative" style={{ height: "65vh" }}>
                 {isIframeLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 rounded-lg">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div
+                      className="animate-spin rounded-full h-8 w-8 border-b-2"
+                      style={{ borderColor: color }}
+                    />
                   </div>
                 )}
                 <iframe
@@ -178,6 +197,10 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docData, color }) => 
                   title={docData.fileName}
                   className="w-full h-full rounded-lg shadow-md bg-white border-0"
                   onLoad={() => setIsIframeLoading(false)}
+                  onError={() => {
+                    setIsIframeLoading(false);
+                    setImgError(true);
+                  }}
                 />
               </div>
             ) : (
@@ -187,9 +210,13 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docData, color }) => 
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-semibold text-gray-700">
-                    {imgError ? "Unable to preview this file" : "Preview not available"}
+                    {imgError
+                      ? "Unable to preview this file"
+                      : "Preview not available"}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">{docData.contentType}</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {docData.contentType}
+                  </p>
                 </div>
                 <button
                   onClick={handleDownload}
@@ -207,12 +234,22 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: docData, color }) => 
           <div className="flex-shrink-0 px-6 py-3 border-t border-gray-100 bg-gray-50/60 flex flex-wrap gap-x-6 gap-y-1">
             {[
               { label: "Uploaded", value: formatDate(docData.uploadedAt) },
-              { label: "Shipment Date", value: docData.shipmentDate ? formatDate(docData.shipmentDate) : "-" },
+              {
+                label: "Shipment Date",
+                value: docData.shipmentDate
+                  ? formatDate(docData.shipmentDate)
+                  : "-",
+              },
               { label: "Type", value: docData.contentType || "-" },
-              { label: "Size", value: formatBytes(docData.fileSizeBytes) || "-" },
+              {
+                label: "Size",
+                value: formatBytes(docData.fileSizeBytes) || "-",
+              },
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}:</span>
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {label}:
+                </span>
                 <span className="text-xs text-gray-600">{value}</span>
               </div>
             ))}

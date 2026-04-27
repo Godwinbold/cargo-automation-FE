@@ -48,9 +48,15 @@ const ChangeStatusModal = ({
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
         onClick={onClose}
+        onKeyDown={(e) => e.key === "Escape" && onClose()}
       />
 
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 overflow-hidden animate-in zoom-in-95 fade-in duration-300">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="change-status-title"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 overflow-hidden animate-in zoom-in-95 fade-in duration-300"
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
           <div>
@@ -61,6 +67,7 @@ const ChangeStatusModal = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close modal"
             className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-400 hover:text-gray-600"
           >
             <X size={20} />

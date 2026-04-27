@@ -47,8 +47,6 @@ const ShipmentFilters = ({
     }
   };
 
-
-
   const hasFilters =
     startDate || endDate || (showAdvanced && (userId || status));
 
@@ -198,19 +196,37 @@ const ShipmentFilters = ({
                   <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100/50">
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
-                        <label className="text-sm font-bold text-gray-800">Only My Shipments</label>
-                        <p className="text-[11px] text-gray-500 mt-0.5">Filter by shipments you created</p>
+                        <label className="text-sm font-bold text-gray-800">
+                          Only My Shipments
+                        </label>
+                        <p className="text-[11px] text-gray-500 mt-0.5">
+                          Filter by shipments you created
+                        </p>
                       </div>
                       <button
                         type="button"
-                        onClick={() => setLocalUserId(localUserId === user?.userId ? "" : user?.userId)}
+                        role="switch"
+                        aria-checked={localUserId === user?.userId}
+                        aria-label="Filter to only my shipments"
+                        onClick={() => {
+                          if (user?.userId) {
+                            setLocalUserId(
+                              localUserId === user.userId ? "" : user.userId,
+                            );
+                          }
+                        }}
+                        disabled={!user?.userId}
                         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          localUserId === user?.userId ? 'bg-[#3DA5E0]' : 'bg-gray-200'
+                          localUserId === user?.userId
+                            ? "bg-[#3DA5E0]"
+                            : "bg-gray-200"
                         }`}
                       >
                         <span
                           className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            localUserId === user?.userId ? 'translate-x-5' : 'translate-x-0'
+                            localUserId === user?.userId
+                              ? "translate-x-5"
+                              : "translate-x-0"
                           }`}
                         />
                       </button>
@@ -218,7 +234,9 @@ const ShipmentFilters = ({
                     {localUserId === user?.userId && user?.email && (
                       <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-blue-100 animate-in fade-in slide-in-from-top-1 duration-300">
                         <User size={14} className="text-[#3DA5E0]" />
-                        <span className="text-xs font-medium text-gray-600 truncate">{user.email}</span>
+                        <span className="text-xs font-medium text-gray-600 truncate">
+                          {user.email}
+                        </span>
                       </div>
                     )}
                   </div>
