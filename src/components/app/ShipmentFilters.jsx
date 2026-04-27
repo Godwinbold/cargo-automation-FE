@@ -9,26 +9,46 @@ const ShipmentFilters = ({
   onStartDateChange,
   endDate,
   onEndDateChange,
+  userId,
+  onUserIdChange,
+  status,
+  onStatusChange,
   color,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [localStartDate, setLocalStartDate] = useState(startDate || "");
   const [localEndDate, setLocalEndDate] = useState(endDate || "");
+  const [localUserId, setLocalUserId] = useState(userId || "");
+  const [localStatus, setLocalStatus] = useState(status || "");
 
   const handleApply = () => {
     onStartDateChange(localStartDate);
     onEndDateChange(localEndDate);
+    onUserIdChange(localUserId);
+    onStatusChange(localStatus);
     setIsModalOpen(false);
   };
 
-  const clearDateFilter = () => {
+  const clearFilters = () => {
     setLocalStartDate("");
     setLocalEndDate("");
+    setLocalUserId("");
+    setLocalStatus("");
     onStartDateChange("");
     onEndDateChange("");
+    onUserIdChange("");
+    onStatusChange("");
   };
 
-  const hasDateFilter = startDate || endDate;
+  const hasFilters = startDate || endDate || userId || status;
+
+  const statusOptions = [
+    { label: "All Status", value: "" },
+    { label: "Accepted", value: "Accepted" },
+    { label: "Booked", value: "Booked" },
+    { label: "Delivered", value: "Delivered" },
+    { label: "Flown", value: "Flown" },
+  ];
 
   return (
     <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
@@ -75,24 +95,26 @@ const ShipmentFilters = ({
           onClick={() => {
             setLocalStartDate(startDate || "");
             setLocalEndDate(endDate || "");
+            setLocalUserId(userId || "");
+            setLocalStatus(status || "");
             setIsModalOpen(true);
           }}
           style={{ 
-            backgroundColor: hasDateFilter ? (color || '#3DA5E0') : 'white', 
-            color: hasDateFilter ? 'white' : '#6B6B6B' 
+            backgroundColor: hasFilters ? (color || '#3DA5E0') : 'white', 
+            color: hasFilters ? 'white' : '#6B6B6B' 
           }}
-          className={`w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 border rounded-xl shadow-sm transition hover:opacity-90 ${hasDateFilter ? 'border-transparent' : 'border-gray-200'}`}
+          className={`w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 border rounded-xl shadow-sm transition hover:opacity-90 ${hasFilters ? 'border-transparent' : 'border-gray-200'}`}
         >
           <Filter size={18} />
           <span className="font-medium text-sm">
-            {hasDateFilter ? "Dates Applied" : "Filter by Date"}
+            {hasFilters ? "Filters Applied" : "Advanced Filters"}
           </span>
         </button>
-        {hasDateFilter && (
+        {hasFilters && (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              clearDateFilter();
+              clearFilters();
             }}
             className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 z-10"
           >
@@ -103,42 +125,68 @@ const ShipmentFilters = ({
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 relative animate-in fade-in zoom-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative animate-in fade-in zoom-in duration-200">
             <button
               onClick={() => setIsModalOpen(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1.5 bg-gray-50 rounded-full transition-colors"
             >
               <X size={20} />
             </button>
-            <h3 className="text-xl font-bold text-gray-800 mb-6">Filter by Date</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-6">Advanced Filters</h3>
             
             <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Start Date</label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={localStartDate}
-                    onChange={(e) => setLocalStartDate(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer"
-                    onClick={(e) => e.target.showPicker && e.target.showPicker()}
-                  />
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Start Date</label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={localStartDate}
+                      onChange={(e) => setLocalStartDate(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer"
+                      onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                    />
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">End Date</label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={localEndDate}
+                      onChange={(e) => setLocalEndDate(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer"
+                      onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                    />
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                  </div>
                 </div>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">End Date</label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={localEndDate}
-                    onChange={(e) => setLocalEndDate(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer"
-                    onClick={(e) => e.target.showPicker && e.target.showPicker()}
-                  />
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                </div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">User ID</label>
+                <input
+                  type="text"
+                  value={localUserId}
+                  onChange={(e) => setLocalUserId(e.target.value)}
+                  placeholder="Enter User UUID"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                <select
+                  value={localStatus}
+                  onChange={(e) => setLocalStatus(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors appearance-none"
+                >
+                  {statusOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -147,6 +195,8 @@ const ShipmentFilters = ({
                 onClick={() => {
                   setLocalStartDate("");
                   setLocalEndDate("");
+                  setLocalUserId("");
+                  setLocalStatus("");
                 }}
                 className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
               >

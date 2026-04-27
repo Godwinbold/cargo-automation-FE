@@ -74,7 +74,7 @@ const ShipmentFilter = ({ setFilters }) => {
 
         {/* Apply Button */}
         <div className="w-full lg:w-auto">
-          <button 
+          <button
             onClick={handleApply}
             className="w-full lg:w-auto whitespace-nowrap py-3 px-8 rounded-lg text-white font-semibold shadow-sm hover:opacity-90 transition-opacity bg-[#3DA5E0]"
           >
