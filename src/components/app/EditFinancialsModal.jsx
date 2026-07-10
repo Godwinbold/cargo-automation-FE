@@ -129,8 +129,22 @@ const EditFinancialsModal = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Store raw string — numeric conversion happens at submit time.
-    // Prevents the controlled-input reset loop (parseFloat("") = NaN → 0).
+    
+    // Numeric fields that should only accept numbers and decimals
+    const numericFields = [
+      "pieces", "chargeableWeightKg", "grossWeightKg", "spotRate", "publishedRates", 
+      "roe", "freightAmountNGN", "ncaaCharges5Percent", "totalChargeNGN", 
+      "chargesCollect", "fuelSurcharge", "secSurcharge", "handlingSurcharge", 
+      "surchargeDueAgent", "awbFee", "gsaCommissionNGN", "vatOnCommission", 
+      "amtDueAirline", "dueAPGInc", "dueSLC"
+    ];
+
+    if (numericFields.includes(name)) {
+      if (value !== "" && !/^\d*\.?\d*$/.test(value)) {
+        return;
+      }
+    }
+
     setFormData((prev) =>
       applyFinancialCalculations({ ...prev, [name]: value }),
     );
@@ -317,7 +331,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Pieces"
                   name="pieces"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.pieces || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
@@ -325,7 +339,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Chargeable Weight (Kg)"
                   name="chargeableWeightKg"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.chargeableWeightKg || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
@@ -333,7 +347,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Gross Weight (Kg)"
                   name="grossWeightKg"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.grossWeightKg || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
@@ -341,7 +355,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Spot Rate"
                   name="spotRate"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.spotRate || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
@@ -349,7 +363,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Published Rates"
                   name="publishedRates"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.publishedRates || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
@@ -357,7 +371,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="ROE"
                   name="roe"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.roe || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
@@ -370,7 +384,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Freight Amt (NGN)"
                   name="freightAmountNGN"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.freightAmountNGN || 0}
                   onChange={handleChange}
                   disabled={isViewOnly || isCalculatedField("freightAmountNGN")}
@@ -378,7 +392,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="NCAA (5%)"
                   name="ncaaCharges5Percent"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.ncaaCharges5Percent || 0}
                   onChange={handleChange}
                   disabled={
@@ -388,7 +402,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Total Charge (NGN)"
                   name="totalChargeNGN"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.totalChargeNGN || 0}
                   onChange={handleChange}
                   disabled={isViewOnly || isCalculatedField("totalChargeNGN")}
@@ -396,7 +410,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Charges Collect"
                   name="chargesCollect"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.chargesCollect || 0}
                   onChange={handleChange}
                   disabled={isViewOnly || isCalculatedField("chargesCollect")}
@@ -404,7 +418,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Fuel Surcharge"
                   name="fuelSurcharge"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.fuelSurcharge || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
@@ -412,7 +426,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="SEC Surcharge"
                   name="secSurcharge"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.secSurcharge || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
@@ -420,7 +434,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Handling Surcharge"
                   name="handlingSurcharge"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.handlingSurcharge || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
@@ -428,7 +442,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Surcharge (Agent)"
                   name="surchargeDueAgent"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.surchargeDueAgent || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
@@ -436,7 +450,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="AWB Fee"
                   name="awbFee"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.awbFee || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
@@ -444,7 +458,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="GSA Commission (NGN)"
                   name="gsaCommissionNGN"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.gsaCommissionNGN || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
@@ -452,7 +466,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="VAT (Commission)"
                   name="vatOnCommission"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.vatOnCommission || 0}
                   onChange={handleChange}
                   disabled={isViewOnly || isCalculatedField("vatOnCommission")}
@@ -460,7 +474,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Amt Due Airline"
                   name="amtDueAirline"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.amtDueAirline || 0}
                   onChange={handleChange}
                   disabled={isViewOnly || isCalculatedField("amtDueAirline")}
@@ -468,7 +482,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Due APG Inc"
                   name="dueAPGInc"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.dueAPGInc || 0}
                   onChange={handleChange}
                   disabled={isViewOnly || isCalculatedField("dueAPGInc")}
@@ -476,7 +490,7 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Due SLC"
                   name="dueSLC"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={formData.dueSLC || 0}
                   onChange={handleChange}
                   disabled={isViewOnly}
