@@ -12,6 +12,10 @@ import {
 import { useUpdateFinancial } from "../../hooks/useShipment";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  CALCULATED_FINANCIAL_FIELDS,
+  applyFinancialCalculations,
+} from "../../utils/financialCalculations";
 
 const InputField = ({
   label,
@@ -41,12 +45,12 @@ const InputField = ({
   </div>
 );
 
-const StepIndicator = ({ num, active, label, icon: Icon }) => (
+const StepIndicator = ({ active, label, icon: Icon }) => (
   <div className="flex flex-col items-center flex-1">
     <div
       className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : "bg-gray-100 text-gray-400"}`}
     >
-      <Icon className="w-5 h-5" />
+      {React.createElement(Icon, { className: "w-5 h-5" })}
     </div>
     <span
       className={`text-[10px] font-bold mt-2 uppercase tracking-tight ${active ? "text-blue-600" : "text-gray-400"}`}
@@ -55,6 +59,8 @@ const StepIndicator = ({ num, active, label, icon: Icon }) => (
     </span>
   </div>
 );
+
+const isCalculatedField = (name) => CALCULATED_FINANCIAL_FIELDS.includes(name);
 
 const EditFinancialsModal = ({
   isOpen,
@@ -79,44 +85,55 @@ const EditFinancialsModal = ({
         ? new Date(financialData.dateOfIssue).toISOString().split("T")[0]
         : "";
 
-      setFormData({
-        mawb: financialData.mawb || "",
-        dateOfIssue,
-        agentsOrClients: financialData.agentsOrClients || "",
-        product: financialData.product || "",
-        routing: financialData.routing || "",
-        flightNo: financialData.flightNo || "",
-        pieces: String(financialData.pieces ?? ""),
-        chargeableWeightKg: String(financialData.chargeableWeightKg ? financialData.chargeableWeightKg / 1000 : ""),
-        grossWeightKg: String(financialData.grossWeightKg ? financialData.grossWeightKg / 1000 : ""),
-        spotRate: String(financialData.spotRate ?? ""),
-        publishedRates: String(financialData.publishedRates ?? ""),
-        roe: String(financialData.roe ?? ""),
-        freightAmountNGN: String(financialData.freightAmountNGN ?? ""),
-        ncaaCharges5Percent: String(financialData.ncaaCharges5Percent ?? ""),
-        totalChargeNGN: String(financialData.totalChargeNGN ?? ""),
-        chargesCollect: String(financialData.chargesCollect ?? ""),
-        fuelSurcharge: String(financialData.fuelSurcharge ?? ""),
-        secSurcharge: String(financialData.secSurcharge ?? ""),
-        handlingSurcharge: String(financialData.handlingSurcharge ?? ""),
-        surchargeDueAgent: String(financialData.surchargeDueAgent ?? ""),
-        awbFee: String(financialData.awbFee ?? ""),
-        gsaCommissionNGN: String(financialData.gsaCommissionNGN ?? ""),
-        vatOnCommission: String(financialData.vatOnCommission ?? ""),
-        amtDueAirline: String(financialData.amtDueAirline ?? ""),
-        dueAPGInc: String(financialData.dueAPGInc ?? ""),
-        dueSLC: String(financialData.dueSLC ?? ""),
-      });
+      setFormData(
+        applyFinancialCalculations({
+          mawb: financialData.mawb || "",
+          dateOfIssue,
+          agentsOrClients: financialData.agentsOrClients || "",
+          product: financialData.product || "",
+          routing: financialData.routing || "",
+          flightNo: financialData.flightNo || "",
+          pieces: String(financialData.pieces ?? ""),
+          chargeableWeightKg: String(
+            financialData.chargeableWeightKg
+              ? financialData.chargeableWeightKg / 1000
+              : "",
+          ),
+          grossWeightKg: String(
+            financialData.grossWeightKg
+              ? financialData.grossWeightKg / 1000
+              : "",
+          ),
+          spotRate: String(financialData.spotRate ?? ""),
+          publishedRates: String(financialData.publishedRates ?? ""),
+          roe: String(financialData.roe ?? ""),
+          freightAmountNGN: String(financialData.freightAmountNGN ?? ""),
+          ncaaCharges5Percent: String(financialData.ncaaCharges5Percent ?? ""),
+          totalChargeNGN: String(financialData.totalChargeNGN ?? ""),
+          chargesCollect: String(financialData.chargesCollect ?? ""),
+          fuelSurcharge: String(financialData.fuelSurcharge ?? ""),
+          secSurcharge: String(financialData.secSurcharge ?? ""),
+          handlingSurcharge: String(financialData.handlingSurcharge ?? ""),
+          surchargeDueAgent: String(financialData.surchargeDueAgent ?? ""),
+          awbFee: String(financialData.awbFee ?? ""),
+          gsaCommissionNGN: String(financialData.gsaCommissionNGN ?? ""),
+          vatOnCommission: String(financialData.vatOnCommission ?? ""),
+          amtDueAirline: String(financialData.amtDueAirline ?? ""),
+          dueAPGInc: String(financialData.dueAPGInc ?? ""),
+          dueSLC: String(financialData.dueSLC ?? ""),
+        }),
+      );
       setStep(1);
     }
   }, [isOpen, financialData]);
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     // Store raw string — numeric conversion happens at submit time.
     // Prevents the controlled-input reset loop (parseFloat("") = NaN → 0).
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) =>
+      applyFinancialCalculations({ ...prev, [name]: value }),
+    );
   };
 
   const toNum = (v) => {
@@ -356,7 +373,7 @@ const EditFinancialsModal = ({
                   type="number"
                   value={formData.freightAmountNGN || 0}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={isViewOnly || isCalculatedField("freightAmountNGN")}
                 />
                 <InputField
                   label="NCAA (5%)"
@@ -364,7 +381,9 @@ const EditFinancialsModal = ({
                   type="number"
                   value={formData.ncaaCharges5Percent || 0}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={
+                    isViewOnly || isCalculatedField("ncaaCharges5Percent")
+                  }
                 />
                 <InputField
                   label="Total Charge (NGN)"
@@ -372,7 +391,7 @@ const EditFinancialsModal = ({
                   type="number"
                   value={formData.totalChargeNGN || 0}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={isViewOnly || isCalculatedField("totalChargeNGN")}
                 />
                 <InputField
                   label="Charges Collect"
@@ -380,7 +399,7 @@ const EditFinancialsModal = ({
                   type="number"
                   value={formData.chargesCollect || 0}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={isViewOnly || isCalculatedField("chargesCollect")}
                 />
                 <InputField
                   label="Fuel Surcharge"
@@ -436,7 +455,7 @@ const EditFinancialsModal = ({
                   type="number"
                   value={formData.vatOnCommission || 0}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={isViewOnly || isCalculatedField("vatOnCommission")}
                 />
                 <InputField
                   label="Amt Due Airline"
@@ -444,7 +463,7 @@ const EditFinancialsModal = ({
                   type="number"
                   value={formData.amtDueAirline || 0}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={isViewOnly || isCalculatedField("amtDueAirline")}
                 />
                 <InputField
                   label="Due APG Inc"
@@ -452,7 +471,7 @@ const EditFinancialsModal = ({
                   type="number"
                   value={formData.dueAPGInc || 0}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={isViewOnly || isCalculatedField("dueAPGInc")}
                 />
                 <InputField
                   label="Due SLC"
