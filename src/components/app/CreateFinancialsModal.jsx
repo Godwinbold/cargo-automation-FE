@@ -126,9 +126,23 @@ const CreateFinancialsModal = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Store raw string for all fields — numeric conversion happens at submit time.
-    // This prevents the controlled-input reset loop where clearing a number field
-    // triggers parseFloat("") = NaN → 0, which React then forces back into the input.
+    
+    // Numeric fields that should only accept numbers and decimals
+    const numericFields = [
+      "pieces", "chargeableWeightKg", "grossWeightKg", "spotRate", "publishedRates", 
+      "roe", "freightAmountNGN", "ncaaCharges5Percent", "totalChargeNGN", 
+      "chargesCollect", "fuelSurcharge", "secSurcharge", "handlingSurcharge", 
+      "surchargeDueAgent", "awbFee", "gsaCommissionNGN", "vatOnCommission", 
+      "amtDueAirline", "dueAPGInc", "dueSLC"
+    ];
+
+    if (numericFields.includes(name)) {
+      // Only allow empty string or valid numbers (with optional decimal point)
+      if (value !== "" && !/^\d*\.?\d*$/.test(value)) {
+        return;
+      }
+    }
+
     setFormData((prev) =>
       applyFinancialCalculations({ ...prev, [name]: value }),
     );
@@ -313,44 +327,50 @@ const CreateFinancialsModal = ({
                 <InputField
                   label="Pieces"
                   name="pieces"
-                  type="number"
+                  type="text"
                   value={formData.pieces}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="Gross Weight (Kg)"
                   name="grossWeightKg"
-                  type="number"
+                  type="text"
                   value={formData.grossWeightKg}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="Chargeable Weight (Kg)"
                   name="chargeableWeightKg"
-                  type="number"
+                  type="text"
                   value={formData.chargeableWeightKg}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="Spot Rate"
                   name="spotRate"
-                  type="number"
+                  type="text"
                   value={formData.spotRate}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="Published Rates"
                   name="publishedRates"
-                  type="number"
+                  type="text"
                   value={formData.publishedRates}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="ROE"
                   name="roe"
-                  type="number"
+                  type="text"
                   value={formData.roe}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
               </div>
             )}
@@ -360,107 +380,121 @@ const CreateFinancialsModal = ({
                 <InputField
                   label="Freight Amt (NGN)"
                   name="freightAmountNGN"
-                  type="number"
+                  type="text"
                   value={formData.freightAmountNGN}
                   onChange={handleChange}
                   disabled={isCalculatedField("freightAmountNGN")}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="NCAA (5%)"
                   name="ncaaCharges5Percent"
-                  type="number"
+                  type="text"
                   value={formData.ncaaCharges5Percent}
                   onChange={handleChange}
                   disabled={isCalculatedField("ncaaCharges5Percent")}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="Total Charge (NGN)"
                   name="totalChargeNGN"
-                  type="number"
+                  type="text"
                   value={formData.totalChargeNGN}
                   onChange={handleChange}
                   disabled={isCalculatedField("totalChargeNGN")}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="Charges Collect"
                   name="chargesCollect"
-                  type="number"
+                  type="text"
                   value={formData.chargesCollect}
                   onChange={handleChange}
                   disabled={isCalculatedField("chargesCollect")}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="Fuel Surcharge"
                   name="fuelSurcharge"
-                  type="number"
+                  type="text"
                   value={formData.fuelSurcharge}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="SEC Surcharge"
                   name="secSurcharge"
-                  type="number"
+                  type="text"
                   value={formData.secSurcharge}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="Handling Surcharge"
                   name="handlingSurcharge"
-                  type="number"
+                  type="text"
                   value={formData.handlingSurcharge}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="Surcharge (Agent)"
                   name="surchargeDueAgent"
-                  type="number"
+                  type="text"
                   value={formData.surchargeDueAgent}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="AWB Fee"
                   name="awbFee"
-                  type="number"
+                  type="text"
                   value={formData.awbFee}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="GSA Commission (NGN)"
                   name="gsaCommissionNGN"
-                  type="number"
+                  type="text"
                   value={formData.gsaCommissionNGN}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="VAT (Commission)"
                   name="vatOnCommission"
-                  type="number"
+                  type="text"
                   value={formData.vatOnCommission}
                   onChange={handleChange}
                   disabled={isCalculatedField("vatOnCommission")}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="Amt Due Airline"
                   name="amtDueAirline"
-                  type="number"
+                  type="text"
                   value={formData.amtDueAirline}
                   onChange={handleChange}
                   disabled={isCalculatedField("amtDueAirline")}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="Due APG Inc"
                   name="dueAPGInc"
-                  type="number"
+                  type="text"
                   value={formData.dueAPGInc}
                   onChange={handleChange}
                   disabled={isCalculatedField("dueAPGInc")}
+                  inputMode="decimal"
                 />
                 <InputField
                   label="Due SLC"
                   name="dueSLC"
-                  type="number"
+                  type="text"
                   value={formData.dueSLC}
                   onChange={handleChange}
+                  inputMode="decimal"
                 />
               </div>
             )}
