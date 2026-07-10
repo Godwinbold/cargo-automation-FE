@@ -9,6 +9,7 @@ import EditFinancialsModal from "./EditFinancialsModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Download } from "lucide-react";
 
 const Financials = ({ color, name }) => {
   const queryClient = useQueryClient();
@@ -109,6 +110,89 @@ const Financials = ({ color, name }) => {
   const totalPages = financials?.data?.totalPages || 
     Math.ceil((financials?.data?.totalCount || financialItems.length || 0) / pageSize);
 
+  const handleExportCSV = () => {
+    if (!financialItems || financialItems.length === 0) {
+      toast.error("No data available to export");
+      return;
+    }
+
+    const headerMapping = [
+      { label: "S/N", key: "sn" },
+      { label: "MAWB", key: "mawb" },
+      { label: "Date of Issue", key: "dateOfIssue" },
+      { label: "Agents/Clients", key: "agentsOrClients" },
+      { label: "Product", key: "product" },
+      { label: "Routing", key: "routing" },
+      { label: "Flight No", key: "flightNo" },
+      { label: "Pieces", key: "pieces" },
+      { label: "Chargeable Weight (Kg)", key: "chargeableWeightKg" },
+      { label: "Gross Weight (Kg)", key: "grossWeightKg" },
+      { label: "Spot Rate", key: "spotRate" },
+      { label: "Published Rates", key: "publishedRates" },
+      { label: "ROE", key: "roe" },
+      { label: "Freight Amt (NGN)", key: "freightAmountNGN" },
+      { label: "NCAA (5%)", key: "ncaaCharges5Percent" },
+      { label: "Total Charge (NGN)", key: "totalChargeNGN" },
+      { label: "Charges Collect", key: "chargesCollect" },
+      { label: "Fuel Surcharge", key: "fuelSurcharge" },
+      { label: "SEC Surcharge", key: "secSurcharge" },
+      { label: "Handling Surcharge", key: "handlingSurcharge" },
+      { label: "Surcharge (Agent)", key: "surchargeDueAgent" },
+      { label: "AWB Fee", key: "awbFee" },
+      { label: "GSA Commission (NGN)", key: "gsaCommissionNGN" },
+      { label: "VAT (Commission)", key: "vatOnCommission" },
+      { label: "Amt Due Airline", key: "amtDueAirline" },
+      { label: "Due APG Inc", key: "dueAPGInc" },
+      { label: "Due SLC", key: "dueSLC" },
+    ];
+
+    const formatDate = (dateString) => {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    };
+
+    const csvRows = [];
+    csvRows.push(headerMapping.map((h) => `"${h.label}"`).join(","));
+
+    financialItems.forEach((item, index) => {
+      const row = headerMapping.map((header) => {
+        let value;
+        if (header.key === "sn") {
+          value = (currentPage - 1) * pageSize + index + 1;
+        } else if (header.key === "dateOfIssue") {
+          value = formatDate(item[header.key]);
+        } else {
+          value = item[header.key];
+          if (typeof value === "number" && header.key.toLowerCase().endsWith("weightkg")) {
+            value = (value / 1000).toFixed(2);
+          }
+        }
+        
+        if (value !== null && value !== undefined) {
+          const stringValue = String(value);
+          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+            return `"${stringValue.replace(/"/g, '""')}"`;
+          }
+          return stringValue;
+        }
+        return "-";
+      });
+      csvRows.push(row.join(","));
+    });
+
+    const csvString = csvRows.join("\n");
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `Financials_Export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("CSV exported successfully");
+  };
+
   return (
     <div className="flex flex-col p-4 min-h-screen">
       <div className="flex-none flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
@@ -116,6 +200,14 @@ const Financials = ({ color, name }) => {
           title="Financials"
           description="Access shipment billing, airline settlements, and financial summaries, all in one place."
         />
+        <button
+          onClick={handleExportCSV}
+          style={{ backgroundColor: color || "#2563eb" }}
+          className="flex items-center justify-center gap-2 px-4 py-2 text-white rounded-lg hover:opacity-90 transition-opacity font-medium shadow-sm"
+        >
+          <Download size={18} />
+          <span>Export as CSV</span>
+        </button>
       </div>
 
       <div className="flex-none px-2 mb-2">
