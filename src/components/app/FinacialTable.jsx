@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import ReactDOM from "react-dom";
-import { MoreVertical, Edit2, Eye, Trash2 } from "lucide-react";
+import { MoreVertical, Edit2, Eye, Trash2, Download } from "lucide-react";
 import Pagination from "./Pagination";
 
 // Action Menu Portal Component
@@ -10,6 +10,7 @@ const ActionMenuPortal = ({
   onEdit,
   onView,
   onDelete,
+  onExport,
   id,
 }) => {
   const [menuPos, setMenuPos] = useState({
@@ -22,7 +23,7 @@ const ActionMenuPortal = ({
   useLayoutEffect(() => {
     if (!buttonRect) return;
 
-    const menuHeight = 160; // Approximate height of the menu
+    const menuHeight = 200; // Approximate height of the menu with Export button
     const spaceBelow = window.innerHeight - buttonRect.bottom;
     const shouldOpenUpwards = spaceBelow < menuHeight;
 
@@ -83,6 +84,16 @@ const ActionMenuPortal = ({
         <Eye className="w-4 h-4 text-green-500" />
         View Financial
       </button>
+      <button
+        onClick={() => {
+          onExport && onExport(id);
+          onClose();
+        }}
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-all font-medium"
+      >
+        <Download className="w-4 h-4 text-blue-600" />
+        Export as CSV
+      </button>
       <div className="h-px bg-gray-100 my-1 mx-2" />
       <button
         onClick={() => {
@@ -111,6 +122,7 @@ const FinancialTable = ({
   onEdit,
   onView,
   onDelete,
+  onExport,
 }) => {
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [buttonRect, setButtonRect] = useState(null);
@@ -241,6 +253,7 @@ const FinancialTable = ({
           onEdit={onEdit}
           onView={onView}
           onDelete={onDelete}
+          onExport={onExport}
         />
       )}
 
