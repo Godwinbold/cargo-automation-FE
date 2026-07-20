@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Search, Plus, Edit2, Trash2, AlertTriangle } from "lucide-react";
 import Pagination from "../Pagination";
@@ -16,6 +16,17 @@ const AdminAirlines = () => {
   const [selectedAirline, setSelectedAirline] = useState(null);
   const [airlineToDelete, setAirlineToDelete] = useState(null);
   
+  useEffect(() => {
+    if (isModalOpen || airlineToDelete) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isModalOpen, airlineToDelete]);
+
   const { data: airlinesData, isLoading } = useGetAllAirlines();
   const { mutate: deleteAirline, isPending: isDeleting } = useDeleteAirline();
   const queryClient = useQueryClient();
@@ -72,7 +83,7 @@ const AdminAirlines = () => {
 
   return (
     <div className="flex flex-col space-y-6">
-      <div className="flex flex-row justify-between items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Airlines Management</h1>
           <p className="text-sm text-gray-500">
@@ -80,11 +91,11 @@ const AdminAirlines = () => {
           </p>
         </div>
         <button
-          className="flex items-center gap-2 bg-[#3DA5E0] hover:bg-[#2b8bc2] text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          className="flex w-full sm:w-auto justify-center items-center gap-2 bg-[#3DA5E0] hover:bg-[#2b8bc2] text-white px-4 py-2 rounded-lg font-medium transition-colors"
           onClick={handleOpenCreateModal}
         >
           <Plus size={18} />
-          <span>Add Airline</span>
+          <span className='text-nowrap'>Add Airline</span>
         </button>
       </div>
 

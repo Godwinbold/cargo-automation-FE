@@ -510,7 +510,7 @@ const CreateFinancialsModal = ({
               <span>Back</span>
             </button>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 px-2">
               <button
                 onClick={onClose}
                 className="px-6 py-3 text-sm font-bold text-gray-500 hover:text-gray-700"
@@ -524,7 +524,7 @@ const CreateFinancialsModal = ({
                   style={{ backgroundColor: color }}
                   className="flex items-center gap-2 px-8 py-3 text-sm font-bold text-white rounded-2xl shadow-xl shadow-blue-100 hover:shadow-blue-200 transition-all active:scale-95"
                 >
-                  <span>Next Step</span>
+                  <span className="text-nowrap">Next Step</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               ) : (
@@ -542,7 +542,7 @@ const CreateFinancialsModal = ({
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      <span>Complete & Create</span>
+                      <span>Submit</span>
                     </>
                   )}
                 </button>

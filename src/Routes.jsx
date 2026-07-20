@@ -10,7 +10,6 @@ import Documents from "./components/app/Documents";
 import ManageShipping from "./components/app/ManageShipping";
 import DashboardLayout from "./components/app/DashboardLayout";
 import ExecutiveDashboard from "./components/app/ExecutiveDashboard";
-import ExecutiveSignup from "./components/auth/ExecutiveSignup";
 import ExecutiveLogin from "./components/auth/ExecutiveLogin";
 import ExecutiveForgotPasswordPage from "./components/auth/ExecutiveForgotPassword";
 import ExecutiveLayout from "./components/app/ExecutiveLayout";
@@ -20,6 +19,7 @@ import AdminLogin from "./components/auth/AdminLogin";
 import AdminLayout from "./components/app/admin/AdminLayout";
 import AdminDashboard from "./components/app/admin/AdminDashboard";
 import AdminAirlines from "./components/app/admin/AdminAirlines";
+import AdminAuditLogs from "./components/app/admin/AdminAuditLogs";
 import NotFound from "./pages/NotFound";
 import ChangePasswordPage from "./components/auth/ChangePassword";
 
@@ -36,7 +36,7 @@ const AppRoutes = () => {
         <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/executive-login" element={<ExecutiveLogin />} />
 
-        <Route path="/executive-signup" element={<ExecutiveSignup />} />
+       
         <Route
           path="/executive-forgot-password"
           element={<ExecutiveForgotPasswordPage />}
@@ -65,6 +65,7 @@ const AppRoutes = () => {
         >
           <Route index element={<AdminDashboard />} />
           <Route path="airlines" element={<AdminAirlines />} />
+          <Route path="audit-logs" element={<AdminAuditLogs />} />
         </Route>
 
         <Route
