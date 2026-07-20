@@ -1,5 +1,4 @@
-import { Users, Plane, X } from "lucide-react";
-import { useState } from "react";
+import { Users, Plane, X, History } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const AdminSidebar = ({ setMobileMenuOpen, collapsed, setCollapsed }) => {
@@ -15,6 +14,11 @@ const AdminSidebar = ({ setMobileMenuOpen, collapsed, setCollapsed }) => {
       to: `/admin-dashboard/airlines`,
       label: "Airlines",
       icon: Plane,
+    },
+    {
+      to: `/admin-dashboard/audit-logs`,
+      label: "Audit Logs",
+      icon: History,
     },
   ];
 

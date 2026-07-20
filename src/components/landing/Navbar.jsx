@@ -14,13 +14,13 @@ const Navbar = ({ airlines = [], isPending, isError }) => {
     <>
       <nav className="relative z-[60] flex w-full py-1 max-w-5xl md:h-[97px] justify-between px-2 md:pl-[40px] md:pr-[45px] md:rounded-2xl mx-auto items-center bg-white gap-6">
         {/* logo  */}
-        <div className="h-[40px] md:h-[60px]  max-w-[154px]">
+        <Link to="/" className="h-[40px] md:h-[60px]  max-w-[154px] block">
           <img
             src="/icons/logo.svg"
             alt="Logo"
             className="w-full h-full object-cover md:ml-6"
           />
-        </div>
+        </Link>
 
         {/* airline list - desktop */}
         <div className="hidden lg:flex flex-wrap items-center gap-6">

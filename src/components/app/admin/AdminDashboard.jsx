@@ -1,16 +1,57 @@
-import React, { useState } from "react";
-import { useInviteUser, useGetAppUsers } from "../../../hooks/useAdmin";
-import { Search, UserPlus } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { useInviteUser, useGetAppUsers, useDeleteUser } from "../../../hooks/useAdmin";
+import { Search, UserPlus, Trash2, AlertTriangle } from "lucide-react";
 import Pagination from "../Pagination";
 import InviteUserModal from "./InviteUserModal";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const AdminDashboard = () => {
   const { mutate: inviteUser, isPending: isInviting } = useInviteUser();
+  const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser();
+  const queryClient = useQueryClient();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
+
+  const handleDeleteClick = (user) => {
+    setUserToDelete(user);
+  };
+
+  const confirmDelete = () => {
+    if (!userToDelete) return;
+
+    deleteUser(userToDelete.id, {
+      onSuccess: () => {
+        toast.success("User deleted successfully!");
+        queryClient.invalidateQueries({ queryKey: ["appUsers"] });
+        setUserToDelete(null);
+      },
+      onError: (error) => {
+        const message =
+          error.response?.data?.errors?.[0]?.message ||
+          error.response?.data?.message ||
+          "Failed to delete user.";
+        toast.error(message);
+        setUserToDelete(null);
+      },
+    });
+  };
+
+  useEffect(() => {
+    if (isInviteModalOpen || userToDelete) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isInviteModalOpen, userToDelete]);
 
   const { data: usersResponse, isLoading } = useGetAppUsers({
     pageNumber: currentPage,
@@ -40,7 +81,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex flex-col space-y-6">
-      <div className="flex flex-row justify-between items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Users Management</h1>
           <p className="text-sm text-gray-500">
@@ -48,11 +89,11 @@ const AdminDashboard = () => {
           </p>
         </div>
         <button
-          className="flex items-center gap-2 bg-[#3DA5E0] hover:bg-[#2b8bc2] text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          className="flex w-full sm:w-auto justify-center items-center gap-2 bg-[#3DA5E0] hover:bg-[#2b8bc2] text-white px-4 py-2 rounded-lg font-medium transition-colors"
           onClick={() => setIsInviteModalOpen(true)}
         >
           <UserPlus size={18} />
-          <span>Invite User</span>
+          <span className='text-nowrap'>Invite User</span>
         </button>
       </div>
 
@@ -101,13 +142,14 @@ const AdminDashboard = () => {
                 <th className="px-6 py-4 font-semibold">Contact</th>
                 <th className="px-6 py-4 font-semibold">ID / Airline</th>
                 <th className="px-6 py-4 font-semibold text-right">Added On</th>
+                <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan="5"
+                    colSpan="6"
                     className="px-6 py-12 text-center text-gray-500"
                   >
                     <div className="flex justify-center items-center gap-2">
@@ -198,12 +240,24 @@ const AdminDashboard = () => {
                         day: "numeric",
                       })}
                     </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-3">
+                        <button
+                          onClick={() => handleDeleteClick(user)}
+                          disabled={isDeleting}
+                          className="text-gray-400 hover:text-red-500 transition-colors p-1 disabled:opacity-50"
+                          title="Delete User"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td
-                    colSpan="5"
+                    colSpan="6"
                     className="px-6 py-12 text-center text-gray-500"
                   >
                     No users found matching your search.
@@ -236,6 +290,56 @@ const AdminDashboard = () => {
         inviteUser={inviteUser}
         isInviting={isInviting}
       />
+
+      {/* Delete Confirmation Modal */}
+      {userToDelete && createPortal(
+        <>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-[100]"
+            onClick={() => !isDeleting && setUserToDelete(null)}
+          />
+          <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
+            <div
+              className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 animate-in"
+              style={{ animation: "modalPop 0.3s ease-out forwards" }}
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2 text-gray-900">Delete User</h3>
+                <p className="text-sm text-gray-500 mb-6">
+                  Are you sure you want to delete <span className="font-semibold text-gray-800">{userToDelete.firstName} {userToDelete.lastName}</span>? This action cannot be undone.
+                </p>
+
+                <div className="flex justify-center w-full gap-3">
+                  <button
+                    onClick={() => setUserToDelete(null)}
+                    disabled={isDeleting}
+                    className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition font-medium disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    disabled={isDeleting}
+                    className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-medium disabled:opacity-50 flex items-center justify-center"
+                  >
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <style>{`
+            @keyframes modalPop {
+              from { opacity: 0; transform: scale(0.95); }
+              to { opacity: 1; transform: scale(1); }
+            }
+          `}</style>
+        </>,
+        document.body
+      )}
     </div>
   );
 };

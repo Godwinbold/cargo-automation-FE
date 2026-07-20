@@ -259,15 +259,7 @@ const ExecutiveLogin = () => {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
-          Don't have an account?{" "}
-          <Link
-            to={"/executive-signup"}
-            className="text-[var(--primary-color)] font-medium hover:underline"
-          >
-            Sign up
-          </Link>
-        </p>
+       
       </div>
     </div>
   );

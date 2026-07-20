@@ -15,10 +15,26 @@ export const useGetAppUsers = (params = {}, options = {}) => {
   });
 };
 
+export const useDeleteUser = () => {
+  return useMutation({
+    mutationFn: adminApi.deleteUser,
+  });
+};
+
+export const useGetAuditLogs = (params = {}, options = {}) => {
+  return useQuery({
+    queryKey: ["auditLogs", params],
+    queryFn: () => adminApi.getAuditLogs(params),
+    ...options,
+  });
+};
+
 export const useAdmin = () => {
   return {
     useInviteUser,
     useGetAppUsers,
+    useDeleteUser,
+    useGetAuditLogs,
   };
 };
 
