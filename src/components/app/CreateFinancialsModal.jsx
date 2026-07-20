@@ -197,6 +197,7 @@ const CreateFinancialsModal = ({
       {
         onSuccess: () => {
           toast.success("Financial records created successfully");
+          queryClient.invalidateQueries(["financials", "airline", airlineId]);
           queryClient.invalidateQueries(["financial", airlineId]);
           queryClient.invalidateQueries(["financial", airlineId, shipmentId]);
           onClose();

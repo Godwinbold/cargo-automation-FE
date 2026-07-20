@@ -162,12 +162,13 @@ const EditFinancialsModal = ({
   const prevStep = () => {
     if (step > 1) setStep(step - 1);
   };
-
   const handleSubmit = () => {
     // Only send the 26 fields the backend expects — convert strings to numbers here.
     const payload = {
+      id: financialData.id,
+      shipmentId: financialData.shipmentId,
       mawb: formData.mawb,
-      dateOfIssue: new Date(formData.dateOfIssue).toISOString(),
+      dateOfIssue: formData.dateOfIssue ? new Date(formData.dateOfIssue).toISOString() : null,
       agentsOrClients: formData.agentsOrClients,
       product: formData.product,
       routing: formData.routing,
@@ -204,7 +205,8 @@ const EditFinancialsModal = ({
       {
         onSuccess: () => {
           toast.success("Financial records updated successfully");
-          queryClient.invalidateQueries(["financials", airlineId]);
+          queryClient.invalidateQueries(["financials", "airline", airlineId]);
+          queryClient.invalidateQueries(["financial", airlineId, financialData.shipmentId]);
           onClose();
         },
         onError: (err) => {
