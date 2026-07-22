@@ -77,6 +77,17 @@ const EditFinancialsModal = ({
 
   const [formData, setFormData] = useState({});
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   // Initialize form with existing data — all 26 fields, numerics stored as strings
   // so controlled number inputs can be freely cleared/retyped without resetting to 0.
   useEffect(() => {

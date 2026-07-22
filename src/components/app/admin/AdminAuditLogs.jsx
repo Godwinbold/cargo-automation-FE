@@ -1,8 +1,148 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useGetAuditLogs, useGetAppUsers } from "../../../hooks/useAdmin";
-import { Search, Calendar, User, ShieldAlert, RefreshCw, X, Filter } from "lucide-react";
+import { Search, Calendar, User, ShieldAlert, RefreshCw, X, Filter, ArrowRight } from "lucide-react";
 import Pagination from "../Pagination";
+
+const renderChanges = (changesString) => {
+  if (!changesString) {
+    return <span className="text-sm text-gray-500 italic font-sans">No changes recorded</span>;
+  }
+
+  // Split by semicolon
+  const parts = changesString.split(";").map((p) => p.trim()).filter(Boolean);
+  const parsedChanges = [];
+  const unparsedParts = [];
+
+  const cleanValue = (val) => {
+    if (!val) return "";
+    return val.trim().replace(/^['"`]|['"`]$/g, "");
+  };
+
+  const formatFieldName = (name) => {
+    if (!name) return "";
+    // If it has spaces, capitalize words
+    if (name.includes(" ")) {
+      return name
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    }
+    // Split camelCase/PascalCase
+    const withSpaces = name.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+    // Handle snake_case and kebab-case
+    const cleanSeparators = withSpaces.replace(/[_-]/g, " ");
+    return cleanSeparators
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+  parts.forEach((part) => {
+    const marker = ": changed from ";
+    const index = part.indexOf(marker);
+    if (index !== -1) {
+      const field = part.substring(0, index).trim();
+      const rest = part.substring(index + marker.length);
+      
+      let from = "";
+      let to = "";
+      const quoteChar = rest[0];
+      
+      if (quoteChar === "'" || quoteChar === '"' || quoteChar === "`") {
+        const closingQuoteIndex = rest.indexOf(quoteChar, 1);
+        if (closingQuoteIndex !== -1) {
+          from = rest.substring(1, closingQuoteIndex);
+          const toPart = rest.substring(closingQuoteIndex + 1).trim();
+          if (toPart.startsWith("to ")) {
+            const toValueRaw = toPart.substring(3).trim();
+            if (toValueRaw.startsWith(quoteChar) && toValueRaw.endsWith(quoteChar)) {
+              to = toValueRaw.substring(1, toValueRaw.length - 1);
+            } else {
+              to = toValueRaw;
+            }
+          }
+        }
+      }
+
+      if (!from && !to) {
+        const toIndex = rest.lastIndexOf(" to ");
+        if (toIndex !== -1) {
+          from = rest.substring(0, toIndex).trim();
+          to = rest.substring(toIndex + 4).trim();
+        }
+      }
+
+      if (from || to) {
+        parsedChanges.push({
+          field,
+          from: cleanValue(from),
+          to: cleanValue(to),
+        });
+      } else {
+        unparsedParts.push(part);
+      }
+    } else {
+      unparsedParts.push(part);
+    }
+  });
+
+  if (parsedChanges.length === 0) {
+    return (
+      <div className="text-sm text-gray-800 bg-gray-50 border border-gray-100 rounded-lg p-3 whitespace-pre-wrap font-sans leading-relaxed">
+        {changesString}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {parsedChanges.map((change, index) => (
+        <div
+          key={index}
+          className="bg-gray-50/50 border border-gray-200/50 rounded-lg p-3 shadow-sm hover:shadow-md hover:border-blue-200/50 transition-all duration-200"
+        >
+          <div className="text-xs font-bold text-gray-600 mb-2 font-sans tracking-wide uppercase">
+            {formatFieldName(change.field)}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2">
+            {/* Before Value */}
+            <div className="bg-red-50/60 border border-red-100 rounded-lg px-3 py-2 text-xs text-red-700 font-mono break-all">
+              <span className="block text-[9px] text-red-400 font-bold uppercase tracking-wider mb-1">
+                Before
+              </span>
+              {change.from || <span className="italic text-red-300">empty</span>}
+            </div>
+
+            {/* Arrow */}
+            <div className="flex justify-center text-gray-400 rotate-90 sm:rotate-0 p-1">
+              <ArrowRight size={16} className="text-[#3DA5E0]" />
+            </div>
+
+            {/* After Value */}
+            <div className="bg-green-50/60 border border-green-100 rounded-lg px-3 py-2 text-xs text-green-700 font-mono break-all">
+              <span className="block text-[9px] text-green-400 font-bold uppercase tracking-wider mb-1">
+                After
+              </span>
+              {change.to || <span className="italic text-green-300">empty</span>}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {unparsedParts.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-600">
+          <span className="block font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+            Additional Information
+          </span>
+          <div className="bg-gray-50 border border-gray-100 rounded-lg p-2.5 font-sans whitespace-pre-wrap leading-relaxed text-gray-700">
+            {unparsedParts.join("; ")}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const AdminAuditLogs = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -280,7 +420,7 @@ const AdminAuditLogs = () => {
                 <span>Audit Log Details</span>
               </h3>
 
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[60vh] md:max-h-[70vh] overflow-y-auto pr-2">
                 {/* Action & Timestamp */}
                 <div className="flex justify-between items-start border-b border-gray-100 pb-3">
                   <div>
@@ -359,9 +499,7 @@ const AdminAuditLogs = () => {
                 {/* Description / Changes */}
                 <div className="border-t border-gray-100 pt-4">
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Changes / Description</label>
-                  <div className="text-sm text-gray-800 bg-gray-50 border border-gray-100 rounded-lg p-3 max-h-48 overflow-y-auto whitespace-pre-wrap font-sans">
-                    {selectedLog.changes || selectedLog.description || selectedLog.details || "No changes recorded"}
-                  </div>
+                  {renderChanges(selectedLog.changes || selectedLog.description || selectedLog.details)}
                 </div>
               </div>
 
