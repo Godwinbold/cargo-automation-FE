@@ -10,6 +10,10 @@ import {
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import authApi from "../../api/auth";
+import {
+  validatePassword,
+  getAuthErrorMessage,
+} from "../../utils/authValidation";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -39,10 +43,9 @@ const ResetPassword = () => {
   // ── Validation ────────────────────────────────────────────────────────────
   const validate = () => {
     const errs = {};
-    if (!newPassword) {
-      errs.newPassword = "New password is required";
-    } else if (newPassword.length < 8) {
-      errs.newPassword = "Password must be at least 8 characters";
+    const passError = validatePassword(newPassword);
+    if (passError) {
+      errs.newPassword = passError;
     }
 
     if (!confirmPassword) {
@@ -69,8 +72,10 @@ const ResetPassword = () => {
     },
     onError: (err) => {
       setApiError(
-        err?.response?.data?.message ||
+        getAuthErrorMessage(
+          err,
           "Failed to reset password. The link might be expired or invalid.",
+        ),
       );
     },
   });

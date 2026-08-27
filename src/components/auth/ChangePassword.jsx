@@ -5,6 +5,10 @@ import { useMutation } from "@tanstack/react-query";
 import { PORTAL_CONFIGS } from "../../constants/configFile";
 import { useAuthContext } from "../../context/AuthContext";
 import authApi from "../../api/auth";
+import {
+  validatePassword,
+  getAuthErrorMessage,
+} from "../../utils/authValidation";
 
 const ChangePasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -46,10 +50,9 @@ const ChangePasswordPage = () => {
   const validate = () => {
     const errs = {};
     if (!form.oldPassword) errs.oldPassword = "Current password is required";
-    if (!form.newPassword) {
-      errs.newPassword = "New password is required";
-    } else if (form.newPassword.length < 8) {
-      errs.newPassword = "Must be at least 8 characters";
+    const passError = validatePassword(form.newPassword);
+    if (passError) {
+      errs.newPassword = passError;
     }
     if (!form.confirmPassword) {
       errs.confirmPassword = "Please confirm your new password";
@@ -90,9 +93,10 @@ const ChangePasswordPage = () => {
     },
     onError: (err) => {
       setErrorMsg(
-        err?.response?.data?.message ||
-          err?.message ||
+        getAuthErrorMessage(
+          err,
           "Failed to change password. Please try again."
+        )
       );
     },
   });

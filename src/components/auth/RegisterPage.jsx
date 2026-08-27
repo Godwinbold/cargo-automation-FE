@@ -6,6 +6,12 @@ import { useRegisterAirlineUser } from "../../hooks/useAuth";
 import { useGetAllAirlines } from "../../hooks/useGeneral";
 import AirlineSelection from "./AirlineSelection";
 import { toast } from "sonner";
+import {
+  formatPhoneNumber,
+  validatePhoneNumber,
+  validatePassword,
+  getAuthErrorMessage,
+} from "../../utils/authValidation";
 
 const RegisterPage = () => {
   const [searchParams] = useSearchParams();
@@ -79,13 +85,11 @@ const RegisterPage = () => {
     }
 
     if (name === "phoneNumber") {
-      if (!value) error = "Phone number is required";
+      error = validatePhoneNumber(value);
     }
 
     if (name === "password") {
-      if (!value) error = "Password is required";
-      else if (value.length < 8)
-        error = "Password must be at least 8 characters";
+      error = validatePassword(value);
     }
 
     if (name === "confirmPassword") {
@@ -108,12 +112,17 @@ const RegisterPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let finalValue = value;
+    if (name === "phoneNumber") {
+      finalValue = formatPhoneNumber(value);
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: finalValue }));
 
     if (touched[name]) {
       setErrors((prev) => ({
         ...prev,
-        [name]: validateField(name, value),
+        [name]: validateField(name, finalValue),
       }));
     }
   };
@@ -138,7 +147,13 @@ const RegisterPage = () => {
 
     const currentErrors = validateForm();
     if (Object.keys(currentErrors).length > 0) {
-      toast.error("Please fix the errors in the form");
+      if (currentErrors.password) {
+        toast.error(currentErrors.password);
+      } else if (currentErrors.phoneNumber) {
+        toast.error(currentErrors.phoneNumber);
+      } else {
+        toast.error("Please fix the errors in the form");
+      }
       return;
     }
 
@@ -161,10 +176,7 @@ const RegisterPage = () => {
           }, 2000);
         },
         onError: (error) => {
-          const message =
-            error.response?.data?.errors?.[0]?.message ||
-            error.response?.data?.message ||
-            "Registration failed";
+          const message = getAuthErrorMessage(error, "Registration failed");
           toast.error(message);
         },
       },
@@ -321,9 +333,10 @@ const RegisterPage = () => {
                 type="tel"
                 name="phoneNumber"
                 value={formData.phoneNumber}
+                maxLength={formData.phoneNumber?.startsWith("+") ? 15 : 11}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                placeholder="08068482163"
+                placeholder="08068482163 or +234..."
                 className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                   errors.phoneNumber && touched.phoneNumber
                     ? "border-red-500 focus:ring-red-500"
