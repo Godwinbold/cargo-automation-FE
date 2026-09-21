@@ -145,8 +145,13 @@ export const AuthProvider = ({ children }) => {
   }, [token, performAutoLogout]);
 
   const hasRole = (role) => {
-    if (!user || !user.roles) return false;
-    return user.roles.includes(role);
+    if (!user) return false;
+    const target = String(role).toUpperCase().trim();
+    const rolesList = [
+      ...(Array.isArray(user.roles) ? user.roles : []),
+      ...(typeof user.role === "string" ? [user.role] : []),
+    ].map((r) => String(r).toUpperCase().trim());
+    return rolesList.includes(target);
   };
 
   const isAuthenticated = !!token;

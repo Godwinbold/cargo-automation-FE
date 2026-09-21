@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Eye, EyeOff, ArrowLeft, ArrowRight, ShieldAlert } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useLoginAirlineUser } from "../../hooks/useAuth";
 import { toast } from "sonner";
 import { SaveToLocalStorage } from "../../utils/getFromLocals";
@@ -8,7 +8,6 @@ import { useAuthContext } from "../../context/AuthContext";
 
 const ExecutiveLogin = () => {
   const { login } = useAuthContext();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -24,6 +23,7 @@ const ExecutiveLogin = () => {
     email: false,
     password: false,
   });
+  const [roleAlert, setRoleAlert] = useState(null);
   const { mutate: loginUser, isPending: isLoading } = useLoginAirlineUser();
 
   // Validate single field
@@ -61,6 +61,7 @@ const ExecutiveLogin = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (roleAlert) setRoleAlert(null);
 
     // Only show error if field has been touched
     if (touched[name]) {
@@ -101,8 +102,35 @@ const ExecutiveLogin = () => {
       },
       {
         onSuccess: (response) => {
-          toast.success("Login successful!");
           const loginData = response?.data;
+          const rawRoles = [
+            ...(Array.isArray(loginData?.roles) ? loginData.roles : []),
+            ...(typeof loginData?.role === "string" ? [loginData.role] : []),
+          ].map((r) => String(r).toUpperCase().trim());
+
+          const isExecutive = rawRoles.includes("EXECUTIVE");
+
+          if (!isExecutive) {
+            const detectedRole = rawRoles.length > 0 ? rawRoles[0] : "STANDARD_USER";
+            setRoleAlert({
+              type: detectedRole,
+              title: "Access Restricted",
+              message:
+                "This portal is exclusively for Executive Leadership. Your account does not have Executive privileges. Please sign in via your designated portal.",
+              actionText: "Go to Partner Login",
+              targetUrl: "/",
+            });
+            toast.error(
+              "Access Restricted: This portal requires Executive privileges.",
+              {
+                id: "role-mismatch-not-exec",
+                duration: 7000,
+              },
+            );
+            return;
+          }
+
+          toast.success("Login successful!");
 
           if (loginData?.token) {
             SaveToLocalStorage("access_token", loginData.token);
@@ -163,6 +191,44 @@ const ExecutiveLogin = () => {
         <p className="text-sm text-left text-gray-600 mb-6">
           Login to your account to continue
         </p>
+
+        {/* Role Mismatch Alert Banner */}
+        {roleAlert && (
+          <div className="mb-5 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="text-xs flex-1">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <p className="font-bold text-sm text-amber-950">
+                    {roleAlert.title}
+                  </p>
+                  <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-semibold text-[10px] tracking-wider uppercase">
+                    {roleAlert.type}
+                  </span>
+                </div>
+                <p className="text-amber-800 leading-relaxed">
+                  {roleAlert.message}
+                </p>
+                <div className="mt-3 flex items-center gap-2.5">
+                  <Link
+                    to={roleAlert.targetUrl}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-semibold rounded-lg text-xs transition shadow-sm"
+                  >
+                    <span>{roleAlert.actionText}</span>
+                    <ArrowRight size={13} />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setRoleAlert(null)}
+                    className="px-2.5 py-1.5 text-xs text-amber-800 hover:text-amber-950 font-medium rounded-lg hover:bg-amber-100 transition"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {/* Email Field */}

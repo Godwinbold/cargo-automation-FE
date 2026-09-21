@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, ArrowRight, ShieldAlert } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { LOGIN_NAME_CONFIGS } from "../../constants/configFile";
 import { useLoginAirlineUser } from "../../hooks/useAuth";
@@ -59,6 +59,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [touched, setTouched] = useState({ email: false, password: false });
+  const [roleAlert, setRoleAlert] = useState(null);
 
   if (isLoadingAirlines && !nameSlug) {
     return (
@@ -120,6 +121,7 @@ const LoginPage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (roleAlert) setRoleAlert(null);
 
     if (touched[name]) {
       setErrors((prev) => ({
@@ -156,9 +158,67 @@ const LoginPage = () => {
       { airlineId, credentials: formData },
       {
         onSuccess: (response) => {
+          const loginData = response?.data;
+          const rawRoles = [
+            ...(Array.isArray(loginData?.roles) ? loginData.roles : []),
+            ...(typeof loginData?.role === "string" ? [loginData.role] : []),
+          ].map((r) => String(r).toUpperCase().trim());
+          const isAdmin = rawRoles.includes("ADMIN");
+          const isExecutive = rawRoles.includes("EXECUTIVE");
+
+          const userDisplayName =
+            [loginData?.firstName, loginData?.lastName]
+              .filter(Boolean)
+              .join(" ") ||
+            loginData?.email ||
+            formData.email;
+
+          // Flag and reject Admin login attempts on the partner user portal
+          if (isAdmin) {
+            setRoleAlert({
+              type: "admin",
+              accountName: userDisplayName,
+              accountEmail: loginData?.email || formData.email,
+              title: "Administrator Account Detected",
+              message:
+                "This portal is strictly for partner airline operational staff. Please use the dedicated Admin Portal.",
+              actionText: "Go to Admin Portal",
+              targetUrl: "/admin-login",
+            });
+            toast.error(
+              "Administrator account detected. Please use the Admin Portal to sign in.",
+              {
+                id: "role-mismatch-admin",
+                duration: 7000,
+              },
+            );
+            return;
+          }
+
+          // Flag and reject Executive login attempts on the partner user portal
+          if (isExecutive) {
+            setRoleAlert({
+              type: "executive",
+              accountName: userDisplayName,
+              accountEmail: loginData?.email || formData.email,
+              title: "Executive Account Detected",
+              message:
+                "You are attempting to sign in with an Executive account. This portal is strictly for partner airline operational staff. Please use the dedicated Executive Portal.",
+              actionText: "Go to Executive Portal",
+              targetUrl: "/executive-login",
+            });
+            toast.error(
+              "Executive account detected. Please use the Executive Portal to sign in.",
+              {
+                id: "role-mismatch-exec",
+                duration: 7000,
+              },
+            );
+            return;
+          }
+
           toast.success("Login successful!");
 
-          const loginData = response?.data;
           const targetAirlineId = loginData?.airlineId || airlineId;
 
           // Store token and user data
@@ -174,7 +234,7 @@ const LoginPage = () => {
               localStorage.setItem("userId", loginData.userId);
             }
           }
-          
+
           // Explicitly store email for features like change password
           localStorage.setItem("userEmail", formData.email);
 
@@ -223,6 +283,52 @@ const LoginPage = () => {
         <p className="text-sm text-left text-gray-600 mb-6">
           Login to your account to continue
         </p>
+
+        {/* Role Mismatch Alert Banner */}
+        {roleAlert && (
+          <div className="mb-5 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="text-xs flex-1">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <p className="font-bold text-sm text-amber-950">
+                    {roleAlert.title}
+                  </p>
+                  <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-semibold text-[10px] tracking-wider uppercase">
+                    {roleAlert.type}
+                  </span>
+                </div>
+                {roleAlert.accountName && (
+                  <p className="text-xs text-amber-900 font-medium mb-1.5">
+                    Account: <span className="font-semibold">{roleAlert.accountName}</span>
+                    {roleAlert.accountEmail && roleAlert.accountEmail !== roleAlert.accountName && (
+                      <span className="text-amber-700 ml-1">({roleAlert.accountEmail})</span>
+                    )}
+                  </p>
+                )}
+                <p className="text-amber-800 leading-relaxed">
+                  {roleAlert.message}
+                </p>
+                <div className="mt-3 flex items-center gap-2.5">
+                  <Link
+                    to={roleAlert.targetUrl}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-semibold rounded-lg text-xs transition shadow-sm"
+                  >
+                    <span>{roleAlert.actionText}</span>
+                    <ArrowRight size={13} />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setRoleAlert(null)}
+                    className="px-2.5 py-1.5 text-xs text-amber-800 hover:text-amber-950 font-medium rounded-lg hover:bg-amber-100 transition"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {/* Email Field */}
