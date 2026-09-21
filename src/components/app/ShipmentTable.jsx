@@ -9,7 +9,6 @@ import {
   useChangeShipmentStatus,
 } from "../../hooks/useShipment";
 import {
-  MoreHorizontal,
   Eye,
   MessageSquarePlus,
   Trash2,
@@ -17,13 +16,23 @@ import {
   FileUp,
   MoreVertical,
   RefreshCw,
+  X,
 } from "lucide-react";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import CreateFinancialsModal from "./CreateFinancialsModal";
 import UploadDocumentModal from "./UploadDocumentModal";
 import ChangeStatusModal from "./ChangeStatusModal";
 
-// Action Menu Portal Component
+const STATUS_FLOW = ["Accepted", "Booked", "Flown", "Delivered"];
+
+const statusColors = {
+  Accepted: "bg-[#F6FEF9] text-[#006428]",
+  Booked: "bg-[#FEFCF6] text-[#845E00]",
+  Delivered: "bg-[#FDF6FE] text-[#A800C3]",
+  Flown: "bg-[#F6F9FE] text-[#0C5EE3]",
+};
+
+// Action Menu Portal Component (Mobile Bottom Sheet + Desktop Clamped Popover)
 const ActionMenuPortal = ({
   buttonRect,
   onClose,
@@ -35,6 +44,9 @@ const ActionMenuPortal = ({
   onDelete,
   item,
 }) => {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
   const [menuPos, setMenuPos] = useState({
     top: 0,
     left: 0,
@@ -42,43 +54,243 @@ const ActionMenuPortal = ({
   });
   const menuRef = useRef(null);
 
+  // Track window resize to toggle mobile bottom sheet vs desktop dropdown
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Desktop coordinate calculation with viewport clamping
   useLayoutEffect(() => {
-    if (!buttonRect) return;
-    const menuHeight = 280; // Approximate height of the menu
+    if (isMobile || !buttonRect) return;
+
+    const menuHeight = 320;
+    const menuWidth = 224; // w-56 = 224px
     const spaceBelow = window.innerHeight - buttonRect.bottom;
-    const shouldOpenUpwards = spaceBelow < menuHeight;
+    const spaceAbove = buttonRect.top;
+    const shouldOpenUpwards = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+
+    let top = shouldOpenUpwards
+      ? buttonRect.top - menuHeight - 8
+      : buttonRect.bottom + 8;
+
+    // Viewport clamping so menu NEVER overflows off the top or bottom edge
+    top = Math.max(16, Math.min(window.innerHeight - menuHeight - 16, top));
+
+    // Viewport clamping so menu NEVER overflows off the left or right edge
+    let left = buttonRect.right - menuWidth;
+    left = Math.max(16, Math.min(window.innerWidth - menuWidth - 16, left));
+
     setMenuPos({
-      top: shouldOpenUpwards
-        ? buttonRect.top - menuHeight - 8
-        : buttonRect.bottom + 8,
-      left: buttonRect.right - 192, // 192 is w-48
+      top,
+      left,
       openUpwards: shouldOpenUpwards,
     });
-  }, [buttonRect]);
+  }, [buttonRect, isMobile]);
 
+  // Click outside, escape key, and scroll handlers
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) onClose();
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        onClose();
+      }
     };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    // On mobile: lock background scrolling while sheet is open
+    if (isMobile) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("keydown", handleKeyDown);
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+
+    // On desktop: close menu when scrolling page
     window.addEventListener("scroll", onClose, true);
-    window.addEventListener("resize", onClose);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("scroll", onClose, true);
-      window.removeEventListener("resize", onClose);
     };
-  }, [onClose]);
+  }, [onClose, isMobile]);
 
+  // --- MOBILE BOTTOM SHEET ---
+  if (isMobile) {
+    return ReactDOM.createPortal(
+      <div className="fixed inset-0 z-[9999] flex flex-col justify-end">
+        {/* Backdrop Overlay */}
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={onClose}
+        />
+
+        {/* Bottom Drawer */}
+        <div
+          ref={menuRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Shipment Actions"
+          className="relative z-10 w-full bg-white rounded-t-3xl shadow-2xl p-5 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 ease-out flex flex-col gap-1 pb-8"
+        >
+          {/* Drag Handle Bar */}
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-3 flex-shrink-0" />
+
+          {/* Header */}
+          <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-100">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                Shipment Actions
+              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-base font-bold text-gray-900">
+                  {item?.airwayBillNumber || "Shipment"}
+                </span>
+                {item?.statusDisplay && (
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      statusColors[item.statusDisplay] ||
+                      "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {item.statusDisplay}
+                  </span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Action List */}
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={() => {
+                onView(item.id);
+                onClose();
+              }}
+              className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+            >
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                <Eye className="w-4 h-4" />
+              </div>
+              <span>View Details</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onAddNote(item.id);
+                onClose();
+              }}
+              className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+            >
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                <MessageSquarePlus className="w-4 h-4" />
+              </div>
+              <span>Add Note</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onChangeStatus(item);
+                onClose();
+              }}
+              className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+            >
+              <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 flex-shrink-0">
+                <RefreshCw className="w-4 h-4" />
+              </div>
+              <span>
+                {item?.statusDisplay === "Delivered"
+                  ? "Status (Delivered)"
+                  : "Change Status"}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                onCreateFinancials(item);
+                onClose();
+              }}
+              className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+            >
+              <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 flex-shrink-0">
+                <CircleDollarSign className="w-4 h-4" />
+              </div>
+              <span>Create Financials</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onUploadDocument(item);
+                onClose();
+              }}
+              className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+            >
+              <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 flex-shrink-0">
+                <FileUp className="w-4 h-4" />
+              </div>
+              <span>Upload Document</span>
+            </button>
+
+            <div className="h-px bg-gray-100 my-1" />
+
+            <button
+              onClick={() => {
+                onDelete(item);
+                onClose();
+              }}
+              className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 active:bg-red-100 rounded-xl transition-colors"
+            >
+              <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-600 flex-shrink-0">
+                <Trash2 className="w-4 h-4" />
+              </div>
+              <span>Delete Shipment</span>
+            </button>
+          </div>
+
+          {/* Cancel Button */}
+          <button
+            onClick={onClose}
+            className="w-full mt-2 py-3 bg-gray-100 active:bg-gray-200 text-gray-700 font-semibold rounded-xl text-center transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
+
+  // --- DESKTOP DROPDOWN POPOVER ---
   return ReactDOM.createPortal(
     <div
       ref={menuRef}
+      role="menu"
       style={{
         position: "fixed",
         top: `${menuPos.top}px`,
         left: `${menuPos.left}px`,
       }}
-      className={`w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-[9999] animate-in fade-in zoom-in duration-200 ${
+      className={`w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-[9999] animate-in fade-in zoom-in duration-200 ${
         menuPos.openUpwards ? "origin-bottom-right" : "origin-top-right"
       }`}
     >
@@ -87,9 +299,9 @@ const ActionMenuPortal = ({
           onView(item.id);
           onClose();
         }}
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
       >
-        <Eye className="w-4 h-4 text-blue-500" />
+        <Eye className="w-4 h-4 text-blue-500 flex-shrink-0" />
         View Details
       </button>
       <button
@@ -97,29 +309,31 @@ const ActionMenuPortal = ({
           onAddNote(item.id);
           onClose();
         }}
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
       >
-        <MessageSquarePlus className="w-4 h-4 text-green-500" />
+        <MessageSquarePlus className="w-4 h-4 text-emerald-500 flex-shrink-0" />
         Add Note
       </button>
-      {/* <button
+      <button
         onClick={() => {
           onChangeStatus(item);
           onClose();
         }}
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
       >
-        <RefreshCw className="w-4 h-4 text-orange-500" />
-        Change Status
-      </button> */}
+        <RefreshCw className="w-4 h-4 text-amber-500 flex-shrink-0" />
+        {item?.statusDisplay === "Delivered"
+          ? "Status (Delivered)"
+          : "Change Status"}
+      </button>
       <button
         onClick={() => {
           onCreateFinancials(item);
           onClose();
         }}
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
       >
-        <CircleDollarSign className="w-4 h-4 text-orange-500" />
+        <CircleDollarSign className="w-4 h-4 text-orange-500 flex-shrink-0" />
         Create Financials
       </button>
       <button
@@ -127,9 +341,9 @@ const ActionMenuPortal = ({
           onUploadDocument(item);
           onClose();
         }}
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
       >
-        <FileUp className="w-4 h-4 text-purple-500" />
+        <FileUp className="w-4 h-4 text-purple-500 flex-shrink-0" />
         Upload Document
       </button>
       <div className="h-px bg-gray-100 my-1" />
@@ -138,9 +352,9 @@ const ActionMenuPortal = ({
           onDelete(item);
           onClose();
         }}
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 className="w-4 h-4 flex-shrink-0" />
         Delete Shipment
       </button>
     </div>,
@@ -152,7 +366,6 @@ const ShipmentTable = ({
   color,
   data,
   airlineId,
-  onOpenCreateModal,
   currentPage,
   totalPages,
   onPageChange,
@@ -160,7 +373,7 @@ const ShipmentTable = ({
   onPageSizeChange,
 }) => {
   const queryClient = useQueryClient();
-  const { mutate: addNoteMutation, isLoading: isSavingNote } =
+  const { mutate: addNoteMutation, isPending: isSavingNote } =
     useAddShipmentNote();
   const { mutate: deleteShipmentMutation, isPending: isDeleting } =
     useDeleteShipment();
@@ -181,26 +394,9 @@ const ShipmentTable = ({
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState(null);
   const buttonRefs = useRef({});
-  const menuRef = useRef(null);
 
   // Close menu on click outside is now handled in ActionMenuPortal
   // but we still need to clear activeMenuId when a modal opens or on item select
-
-  const statusColors = {
-    Accepted: "bg-[#F6FEF9] text-[#006428]",
-    Booked: "bg-[#FEFCF6] text-[#845E00]",
-    Delivered: "bg-[#FDF6FE] text-[#A800C3]",
-    Flown: "bg-[#F6F9FE] text-[#0C5EE3]",
-  };
-
-  const statusOptions = ["Accepted", "Booked", "Delivered", "Flown"];
-
-  const statusMap = {
-    Accepted: 0,
-    Booked: 1,
-    Delivered: 2,
-    Flown: 3,
-  };
 
   const openModal = (id, mode = "add") => {
     setCurrentRowId(id);
@@ -239,8 +435,23 @@ const ShipmentTable = ({
       },
     );
   };
+
   const handleStatusUpdate = (status) => {
     if (!selectedShipment) return;
+
+    const currentStatus = selectedShipment.statusDisplay || "Accepted";
+    const currentIndex = STATUS_FLOW.indexOf(currentStatus);
+
+    if (currentStatus === "Delivered" || currentIndex === STATUS_FLOW.length - 1) {
+      toast.error("Delivered status is final and cannot be modified.");
+      return;
+    }
+
+    const nextAllowed = STATUS_FLOW[currentIndex + 1];
+    if (status !== nextAllowed) {
+      toast.error(`Invalid status transition. Next status must be "${nextAllowed}".`);
+      return;
+    }
 
     changeStatusMutation(
       {
@@ -310,51 +521,123 @@ const ShipmentTable = ({
   );
 
   const currentRow = data.find((item) => item.id === currentRowId);
-  const currentRowFirstNote =
-    currentRow && currentRow.notes && currentRow.notes.length > 0
-      ? currentRow.notes[0]
-      : null;
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-1 sm:p-6">
+      <div className="flex justify-between items-center mb-3 sm:mb-6 px-1 sm:px-0">
         <h2 className="text-xl font-bold text-gray-800">Shipments</h2>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="h-[calc(100vh-200px)]">
+      {/* Mobile Card View (md:hidden) */}
+      <div className="block md:hidden space-y-2.5">
+        {data?.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-6 text-center text-gray-500 shadow-sm">
+            No shipments found.
+          </div>
+        ) : (
+          data?.map((item) => (
+            <div
+              key={`card-${item.id}`}
+              className="bg-white rounded-xl border border-gray-200/90 p-3.5 shadow-sm hover:shadow-md transition-shadow"
+            >
+              {/* Row 1: Airway Bill Number (left) & Action Button (right) */}
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                    Airway Bill Number
+                  </div>
+                  <div className="font-bold text-gray-900 text-base tracking-tight truncate">
+                    {item.airwayBillNumber}
+                  </div>
+                </div>
+                <button
+                  ref={(el) => (buttonRefs.current[`mobile-${item.id}`] = el)}
+                  onClick={() => {
+                    if (activeMenuId === item.id) {
+                      setActiveMenuId(null);
+                      setButtonRect(null);
+                      setActiveMenuDoc(null);
+                    } else {
+                      const rect =
+                        buttonRefs.current[
+                          `mobile-${item.id}`
+                        ]?.getBoundingClientRect() || {
+                          top: 0,
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                        };
+                      setButtonRect(rect);
+                      setActiveMenuId(item.id);
+                      setActiveMenuDoc(item);
+                    }
+                  }}
+                  className="p-1.5 -mr-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors flex-shrink-0"
+                  aria-label={`Actions for ${item.airwayBillNumber}`}
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Row 2: Status (left) & Date (right) */}
+              <div className="flex items-center justify-between pt-2.5 border-t border-gray-100">
+                <div>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                      statusColors[item.statusDisplay] ||
+                      "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {item.statusDisplay}
+                  </span>
+                </div>
+                <div className="text-xs font-medium text-gray-500">
+                  {item.shipmentDate
+                    ? new Date(item.shipmentDate).toLocaleDateString()
+                    : item.date}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View (hidden md:block) */}
+      <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="min-h-[350px]">
           <table className="min-w-full table-auto border-collapse">
             <thead>
-              <tr>
-                <th className="border-b border-gray-300 px-4 py-3 text-left">
+              <tr className="bg-gray-50/80">
+                <th className="border-b border-gray-200 px-4 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                   Airway Bill Number
                 </th>
-                <th className="border-b border-gray-300 px-4 py-3 text-left">
+                <th className="border-b border-gray-200 px-4 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="border-b border-gray-300 px-4 py-3 text-left">
+                <th className="border-b border-gray-200 px-4 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                   Date
                 </th>
-                {/* <th className="border-b border-gray-300 px-4 py-3 text-left">
-                  Note
-                </th> */}
-                <th className="border-b border-gray-300 px-4 py-3 text-left">
+                <th className="border-b border-gray-200 px-4 py-3.5 text-center text-xs font-bold text-gray-600 uppercase tracking-wider w-20 whitespace-nowrap">
                   Action
                 </th>
               </tr>
             </thead>
             <tbody>
               {data?.map((item) => {
-                const firstNote =
-                  item.notes && item.notes.length > 0 ? item.notes[0] : null;
-
                 return (
                   <tr key={item.id} className="hover:bg-gray-50 transition">
-                    <td className="border-b border-gray-300 px-4 py-3">
+                    <td className="border-b border-gray-300 px-4 py-3 font-medium text-gray-900">
                       {item.airwayBillNumber}
                     </td>
                     <td className="border-b border-gray-300 px-4 py-3">
-                      {item.statusDisplay}
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          statusColors[item.statusDisplay] ||
+                          "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {item.statusDisplay}
+                      </span>
                     </td>
                     <td className="border-b border-gray-300 px-4 py-3">
                       {item.shipmentDate
@@ -396,46 +679,11 @@ const ShipmentTable = ({
             </tbody>
           </table>
         </div>
+      </div>
 
-        {/* Action Menu Portal */}
-        {activeMenuId && buttonRect && (
-          <ActionMenuPortal
-            item={activeMenuDoc}
-            buttonRect={buttonRect}
-            onClose={() => {
-              setActiveMenuId(null);
-              setActiveMenuDoc(null);
-              setButtonRect(null);
-            }}
-            onView={(id) => openModal(id, "view")}
-            onAddNote={(id) => openModal(id, "add")}
-            onChangeStatus={(item) => {
-              setSelectedShipment(item);
-              setShowStatusModal(true);
-            }}
-            onCreateFinancials={(item) => {
-              setSelectedShipment(item);
-              setShowFinancialsModal(true);
-            }}
-            onUploadDocument={(item) => {
-              setSelectedShipment(item);
-              setShowUploadModal(true);
-            }}
-            onDelete={handleDeleteClick}
-          />
-        )}
-
-        <ChangeStatusModal
-          isOpen={showStatusModal}
-          onClose={() => setShowStatusModal(false)}
-          onConfirm={handleStatusUpdate}
-          currentStatus={selectedShipment?.statusDisplay}
-          airwayBillNumber={selectedShipment?.airwayBillNumber}
-          isUpdating={isUpdatingStatus}
-          color={color}
-        />
-
-        {data?.length > 0 && (
+      {/* Pagination component */}
+      {data?.length > 0 && (
+        <div className="mt-2.5 sm:mt-4">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -444,8 +692,46 @@ const ShipmentTable = ({
             onPageSizeChange={onPageSizeChange}
             color={color}
           />
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Action Menu Portal */}
+      {activeMenuId && buttonRect && (
+        <ActionMenuPortal
+          item={activeMenuDoc}
+          buttonRect={buttonRect}
+          onClose={() => {
+            setActiveMenuId(null);
+            setActiveMenuDoc(null);
+            setButtonRect(null);
+          }}
+          onView={(id) => openModal(id, "view")}
+          onAddNote={(id) => openModal(id, "add")}
+          onChangeStatus={(item) => {
+            setSelectedShipment(item);
+            setShowStatusModal(true);
+          }}
+          onCreateFinancials={(item) => {
+            setSelectedShipment(item);
+            setShowFinancialsModal(true);
+          }}
+          onUploadDocument={(item) => {
+            setSelectedShipment(item);
+            setShowUploadModal(true);
+          }}
+          onDelete={handleDeleteClick}
+        />
+      )}
+
+      <ChangeStatusModal
+        isOpen={showStatusModal}
+        onClose={() => setShowStatusModal(false)}
+        onConfirm={handleStatusUpdate}
+        currentStatus={selectedShipment?.statusDisplay}
+        airwayBillNumber={selectedShipment?.airwayBillNumber}
+        isUpdating={isUpdatingStatus}
+        color={color}
+      />
 
       {/* Note Modal */}
       {showModal && (

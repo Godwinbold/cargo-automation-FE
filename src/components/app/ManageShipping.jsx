@@ -2,13 +2,12 @@ import { useState, useEffect } from "react";
 import HeaderTitle from "./HeaderTitle";
 import Create from "./Create";
 import ShipmentTable from "./ShipmentTable";
-import { useCreateShipment, useFilterShipments } from "../../hooks/useShipment";
+import { useFilterShipments } from "../../hooks/useShipment";
 import { GetFromLocalStorage } from "../../utils/getFromLocals";
 import { useSearchParams } from "react-router-dom";
 
 import CreateShipmentModal from "./CreateShipmentModal";
 import ShipmentFilters from "./ShipmentFilters";
-import Pagination from "./Pagination";
 
 const ManageShipping = ({ color, name }) => {
   const [searchParams] = useSearchParams();
@@ -59,7 +58,7 @@ const ManageShipping = ({ color, name }) => {
     Math.ceil((shipments?.data?.totalCount || 0) / pageSize);
 
   return (
-    <div className="flex flex-col p-4 min-h-screen">
+    <div className="flex flex-col p-2 sm:p-4 min-h-screen">
       <div className="flex-none flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <HeaderTitle
           title="Manage Shippings"
@@ -78,7 +77,7 @@ const ManageShipping = ({ color, name }) => {
         </button>
       </div>
 
-      <div className="flex-none px-2 mb-2">
+      <div className="flex-none px-1 sm:px-2 mb-2">
         <ShipmentFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -96,7 +95,7 @@ const ManageShipping = ({ color, name }) => {
         />
       </div>
 
-      <div className="flex-1 px-2 scrollbar-hide">
+      <div className="flex-1 px-0.5 sm:px-2 scrollbar-hide">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>

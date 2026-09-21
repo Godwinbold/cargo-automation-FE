@@ -288,16 +288,13 @@ const Financials = ({ color, name }) => {
       <div className="flex-none flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <HeaderTitle
           title="Financials"
-          description="Access shipment billing, airline settlements, and financial summaries, all in one place."
+          description={
+            name
+              ? `Access ${name} shipment billing, airline settlements, and financial summaries.`
+              : "Access shipment billing, airline settlements, and financial summaries, all in one place."
+          }
         />
-        {/* <button
-          onClick={handleExportCSV}
-          style={{ backgroundColor: color || "#2563eb" }}
-          className="flex items-center justify-center gap-2 px-4 py-2 text-white rounded-lg hover:opacity-90 transition-opacity font-medium shadow-sm"
-        >
-          <Download size={18} />
-          <span>Export as CSV</span>
-        </button> */}
+       <div></div>
       </div>
 
       <div className="flex-none px-2 mb-2">
