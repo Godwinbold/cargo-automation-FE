@@ -8,6 +8,7 @@ import {
   DollarSign,
   Calculator,
   Info,
+  Lock,
 } from "lucide-react";
 import { useUpdateFinancial } from "../../hooks/useShipment";
 import { toast } from "sonner";
@@ -16,6 +17,26 @@ import {
   CALCULATED_FINANCIAL_FIELDS,
   applyFinancialCalculations,
 } from "../../utils/financialCalculations";
+import { formatCurrencyValue } from "../../utils/shipmentUtils";
+
+const CURRENCY_FIELDS = [
+  "spotRate",
+  "publishedRates",
+  "freightAmountNGN",
+  "ncaaCharges5Percent",
+  "totalChargeNGN",
+  "chargesCollect",
+  "fuelSurcharge",
+  "secSurcharge",
+  "handlingSurcharge",
+  "surchargeDueAgent",
+  "awbFee",
+  "gsaCommissionNGN",
+  "vatOnCommission",
+  "amtDueAirline",
+  "dueAPGInc",
+  "dueSLC",
+];
 
 const InputField = ({
   label,
@@ -23,37 +44,72 @@ const InputField = ({
   type = "text",
   value,
   onChange,
+  onBlur,
   placeholder,
   disabled = false,
+  isCurrency = false,
+  unit,
   ...props
 }) => (
   <div className="space-y-1.5">
-    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest px-0.5">
-      {label}
-    </label>
-    <input
-      type={type}
-      name={name}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      disabled={disabled}
-      className={`w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-800 ${disabled ? "bg-gray-100 cursor-not-allowed text-gray-500 opacity-80" : ""}`}
-      {...(type === "number" ? { step: "any" } : {})}
-      {...props}
-    />
+    <div className="flex items-center justify-between px-0.5">
+      <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">
+        {label}
+      </label>
+      {isCurrency && (
+        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+          NGN (₦)
+        </span>
+      )}
+    </div>
+    <div className="relative flex items-center">
+      {isCurrency && (
+        <span className="absolute left-3.5 font-bold text-gray-500 text-sm select-none pointer-events-none">
+          ₦
+        </span>
+      )}
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+        placeholder={placeholder || (isCurrency ? "0.00" : "")}
+        disabled={disabled}
+        className={`w-full ${
+          isCurrency ? "pl-8 pr-4" : unit ? "pl-4 pr-12" : "px-4"
+        } py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-800 ${
+          disabled
+            ? "bg-gray-100 cursor-not-allowed text-gray-500 opacity-80"
+            : ""
+        }`}
+        {...(type === "number" ? { step: "any" } : {})}
+        {...props}
+      />
+      {unit && (
+        <span className="absolute right-3.5 font-medium text-gray-400 text-xs select-none pointer-events-none">
+          {unit}
+        </span>
+      )}
+    </div>
   </div>
 );
 
 const StepIndicator = ({ active, label, icon: Icon }) => (
-  <div className="flex flex-col items-center flex-1">
+  <div className="flex flex-col items-center flex-1 min-w-0">
     <div
-      className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : "bg-gray-100 text-gray-400"}`}
+      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all ${
+        active
+          ? "bg-blue-600 text-white shadow-md sm:shadow-lg shadow-blue-100"
+          : "bg-gray-100 text-gray-400"
+      }`}
     >
-      {React.createElement(Icon, { className: "w-5 h-5" })}
+      {React.createElement(Icon, { className: "w-4 h-4 sm:w-5 sm:h-5" })}
     </div>
     <span
-      className={`text-[10px] font-bold mt-2 uppercase tracking-tight ${active ? "text-blue-600" : "text-gray-400"}`}
+      className={`text-[9px] sm:text-[10px] font-bold mt-1.5 sm:mt-2 uppercase tracking-tight truncate max-w-[80px] sm:max-w-none text-center ${
+        active ? "text-blue-600" : "text-gray-400"
+      }`}
     >
       {label}
     </span>
@@ -68,6 +124,7 @@ const EditFinancialsModal = ({
   airlineId,
   financialData,
   isViewOnly = false,
+  isLocked = false,
   color,
 }) => {
   const queryClient = useQueryClient();
@@ -75,6 +132,7 @@ const EditFinancialsModal = ({
   const { mutate: updateFinancial, isPending: isUpdating } =
     useUpdateFinancial();
 
+  const effectiveViewOnly = isViewOnly || isLocked;
   const [formData, setFormData] = useState({});
 
   useEffect(() => {
@@ -88,8 +146,7 @@ const EditFinancialsModal = ({
     };
   }, [isOpen]);
 
-  // Initialize form with existing data — all 26 fields, numerics stored as strings
-  // so controlled number inputs can be freely cleared/retyped without resetting to 0.
+  // Initialize form with existing data — all 26 fields, formatted monetary values
   useEffect(() => {
     if (isOpen && financialData) {
       const dateOfIssue = financialData.dateOfIssue
@@ -115,23 +172,23 @@ const EditFinancialsModal = ({
               ? financialData.grossWeightKg / 1000
               : "",
           ),
-          spotRate: String(financialData.spotRate ?? ""),
-          publishedRates: String(financialData.publishedRates ?? ""),
+          spotRate: formatCurrencyValue(financialData.spotRate),
+          publishedRates: formatCurrencyValue(financialData.publishedRates),
           roe: String(financialData.roe ?? ""),
-          freightAmountNGN: String(financialData.freightAmountNGN ?? ""),
-          ncaaCharges5Percent: String(financialData.ncaaCharges5Percent ?? ""),
-          totalChargeNGN: String(financialData.totalChargeNGN ?? ""),
-          chargesCollect: String(financialData.chargesCollect ?? ""),
-          fuelSurcharge: String(financialData.fuelSurcharge ?? ""),
-          secSurcharge: String(financialData.secSurcharge ?? ""),
-          handlingSurcharge: String(financialData.handlingSurcharge ?? ""),
-          surchargeDueAgent: String(financialData.surchargeDueAgent ?? ""),
-          awbFee: String(financialData.awbFee ?? ""),
-          gsaCommissionNGN: String(financialData.gsaCommissionNGN ?? ""),
-          vatOnCommission: String(financialData.vatOnCommission ?? ""),
-          amtDueAirline: String(financialData.amtDueAirline ?? ""),
-          dueAPGInc: String(financialData.dueAPGInc ?? ""),
-          dueSLC: String(financialData.dueSLC ?? ""),
+          freightAmountNGN: formatCurrencyValue(financialData.freightAmountNGN),
+          ncaaCharges5Percent: formatCurrencyValue(financialData.ncaaCharges5Percent),
+          totalChargeNGN: formatCurrencyValue(financialData.totalChargeNGN),
+          chargesCollect: formatCurrencyValue(financialData.chargesCollect),
+          fuelSurcharge: formatCurrencyValue(financialData.fuelSurcharge),
+          secSurcharge: formatCurrencyValue(financialData.secSurcharge),
+          handlingSurcharge: formatCurrencyValue(financialData.handlingSurcharge),
+          surchargeDueAgent: formatCurrencyValue(financialData.surchargeDueAgent),
+          awbFee: formatCurrencyValue(financialData.awbFee),
+          gsaCommissionNGN: formatCurrencyValue(financialData.gsaCommissionNGN),
+          vatOnCommission: formatCurrencyValue(financialData.vatOnCommission),
+          amtDueAirline: formatCurrencyValue(financialData.amtDueAirline),
+          dueAPGInc: formatCurrencyValue(financialData.dueAPGInc),
+          dueSLC: formatCurrencyValue(financialData.dueSLC),
         }),
       );
       setStep(1);
@@ -141,7 +198,7 @@ const EditFinancialsModal = ({
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Numeric fields that should only accept numbers and decimals
+    // Numeric fields that should only accept numbers, decimal point, and commas
     const numericFields = [
       "pieces", "chargeableWeightKg", "grossWeightKg", "spotRate", "publishedRates", 
       "roe", "freightAmountNGN", "ncaaCharges5Percent", "totalChargeNGN", 
@@ -151,7 +208,7 @@ const EditFinancialsModal = ({
     ];
 
     if (numericFields.includes(name)) {
-      if (value !== "" && !/^\d*\.?\d*$/.test(value)) {
+      if (value !== "" && !/^[\d,]*\.?\d*$/.test(value)) {
         return;
       }
     }
@@ -161,8 +218,25 @@ const EditFinancialsModal = ({
     );
   };
 
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    if (CURRENCY_FIELDS.includes(name) && value !== "") {
+      const num = parseFloat(String(value).replace(/,/g, ""));
+      if (!Number.isNaN(num)) {
+        const formatted = num.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        setFormData((prev) =>
+          applyFinancialCalculations({ ...prev, [name]: formatted }),
+        );
+      }
+    }
+  };
+
   const toNum = (v) => {
-    const n = parseFloat(v);
+    if (v === null || v === undefined || v === "") return 0;
+    const n = parseFloat(String(v).replace(/,/g, ""));
     return isNaN(n) ? 0 : n;
   };
 
@@ -174,6 +248,7 @@ const EditFinancialsModal = ({
     if (step > 1) setStep(step - 1);
   };
   const handleSubmit = () => {
+    if (effectiveViewOnly) return;
     // Only send the 26 fields the backend expects — convert strings to numbers here.
     const payload = {
       id: financialData.id,
@@ -238,31 +313,49 @@ const EditFinancialsModal = ({
         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
         onClick={onClose}
       />
-      <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[101] flex items-center justify-center p-2 sm:p-4">
         <div
-          className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]"
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]"
           style={{ animation: "modalEntry 0.5s cubic-bezier(0.16, 1, 0.3, 1)" }}
         >
           {/* Header */}
-          <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-black text-gray-900 leading-tight">
-                {isViewOnly ? "View Financials" : "Edit Financials"}
-              </h3>
-              <p className="text-sm font-medium text-gray-400 mt-1 uppercase tracking-wide">
+          <div className="px-4 py-3.5 sm:px-8 sm:py-6 border-b border-gray-100 flex items-center justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg sm:text-xl font-black text-gray-900 leading-tight truncate">
+                  {effectiveViewOnly ? "View Financials" : "Edit Financials"}
+                </h3>
+                {isLocked && (
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] sm:text-[11px] font-bold flex items-center gap-1 shrink-0">
+                    <Lock className="w-3 h-3" />
+                    Locked
+                  </span>
+                )}
+              </div>
+              <p className="text-xs sm:text-sm font-medium text-gray-400 mt-0.5 sm:mt-1 uppercase tracking-wide truncate">
                 MAWB: {financialData.mawb}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-2xl border border-gray-100 transition-all hover:scale-110 active:scale-95"
+              className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-100 transition-all hover:scale-110 active:scale-95 shrink-0 ml-2"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
+          {/* Locked Notice Banner */}
+          {isLocked && (
+            <div className="mx-4 sm:mx-8 mt-3 sm:mt-4 p-2.5 sm:p-3 bg-amber-50 border border-amber-200/80 rounded-xl sm:rounded-2xl flex items-center gap-2 text-xs text-amber-900 font-medium">
+              <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                This financial record is locked because the shipment has been booked. It can only be viewed.
+              </span>
+            </div>
+          )}
+
           {/* Stepper */}
-          <div className="px-12 py-6 bg-gray-50/50 flex items-center">
+          <div className="px-3 py-3 sm:px-12 sm:py-6 bg-gray-50/50 flex items-center">
             <StepIndicator
               num={1}
               active={step === 1}
@@ -270,7 +363,7 @@ const EditFinancialsModal = ({
               icon={Info}
             />
             <div
-              className={`h-0.5 flex-1 mx-4 rounded-full transition-all ${step > 1 ? "bg-blue-600" : "bg-gray-200"}`}
+              className={`h-0.5 flex-1 mx-1.5 sm:mx-4 rounded-full transition-all ${step > 1 ? "bg-blue-600" : "bg-gray-200"}`}
             />
             <StepIndicator
               num={2}
@@ -279,7 +372,7 @@ const EditFinancialsModal = ({
               icon={Calculator}
             />
             <div
-              className={`h-0.5 flex-1 mx-4 rounded-full transition-all ${step > 2 ? "bg-blue-600" : "bg-gray-200"}`}
+              className={`h-0.5 flex-1 mx-1.5 sm:mx-4 rounded-full transition-all ${step > 2 ? "bg-blue-600" : "bg-gray-200"}`}
             />
             <StepIndicator
               num={3}
@@ -290,7 +383,7 @@ const EditFinancialsModal = ({
           </div>
 
           {/* Form Content */}
-          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
             {step === 1 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
                 <InputField
@@ -298,7 +391,7 @@ const EditFinancialsModal = ({
                   name="mawb"
                   value={formData.mawb || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={effectiveViewOnly}
                 />
                 <InputField
                   label="Date of Issue"
@@ -306,35 +399,35 @@ const EditFinancialsModal = ({
                   type="date"
                   value={formData.dateOfIssue || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={effectiveViewOnly}
                 />
                 <InputField
                   label="Agents/Clients"
                   name="agentsOrClients"
                   value={formData.agentsOrClients || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={effectiveViewOnly}
                 />
                 <InputField
                   label="Product"
                   name="product"
                   value={formData.product || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={effectiveViewOnly}
                 />
                 <InputField
                   label="Routing"
                   name="routing"
                   value={formData.routing || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={effectiveViewOnly}
                 />
                 <InputField
                   label="Flight No"
                   name="flightNo"
                   value={formData.flightNo || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={effectiveViewOnly}
                 />
               </div>
             )}
@@ -344,50 +437,63 @@ const EditFinancialsModal = ({
                 <InputField
                   label="Pieces"
                   name="pieces"
-                  type="text" inputMode="decimal"
-                  value={formData.pieces || 0}
+                  type="text"
+                  inputMode="numeric"
+                  value={formData.pieces || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
-                />
-                <InputField
-                  label="Chargeable Weight (Kg)"
-                  name="chargeableWeightKg"
-                  type="text" inputMode="decimal"
-                  value={formData.chargeableWeightKg || 0}
-                  onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={effectiveViewOnly}
+                  unit="pcs"
                 />
                 <InputField
                   label="Gross Weight (Kg)"
                   name="grossWeightKg"
-                  type="text" inputMode="decimal"
-                  value={formData.grossWeightKg || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.grossWeightKg || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={effectiveViewOnly}
+                  unit="kg"
                 />
                 <InputField
-                  label="Spot Rate"
+                  label="Chargeable Weight (Kg)"
+                  name="chargeableWeightKg"
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.chargeableWeightKg || ""}
+                  onChange={handleChange}
+                  disabled={effectiveViewOnly}
+                  unit="kg"
+                />
+                <InputField
+                  label="Spot Rate (₦)"
                   name="spotRate"
-                  type="text" inputMode="decimal"
-                  value={formData.spotRate || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.spotRate || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  onBlur={handleBlur}
+                  isCurrency={true}
+                  disabled={effectiveViewOnly}
                 />
                 <InputField
-                  label="Published Rates"
+                  label="Published Rates (₦)"
                   name="publishedRates"
-                  type="text" inputMode="decimal"
-                  value={formData.publishedRates || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.publishedRates || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  onBlur={handleBlur}
+                  isCurrency={true}
+                  disabled={effectiveViewOnly}
                 />
                 <InputField
-                  label="ROE"
+                  label="ROE (Rate of Exchange)"
                   name="roe"
-                  type="text" inputMode="decimal"
-                  value={formData.roe || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.roe || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  disabled={effectiveViewOnly}
                 />
               </div>
             )}
@@ -395,156 +501,197 @@ const EditFinancialsModal = ({
             {step === 3 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 <InputField
-                  label="Freight Amt (NGN)"
+                  label="Freight Amt (₦)"
                   name="freightAmountNGN"
-                  type="text" inputMode="decimal"
-                  value={formData.freightAmountNGN || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.freightAmountNGN || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly || isCalculatedField("freightAmountNGN")}
+                  disabled={true}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="NCAA (5%)"
+                  label="NCAA (5%) (₦)"
                   name="ncaaCharges5Percent"
-                  type="text" inputMode="decimal"
-                  value={formData.ncaaCharges5Percent || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.ncaaCharges5Percent || ""}
                   onChange={handleChange}
-                  disabled={
-                    isViewOnly || isCalculatedField("ncaaCharges5Percent")
-                  }
+                  disabled={true}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="Total Charge (NGN)"
+                  label="Total Charge (₦)"
                   name="totalChargeNGN"
-                  type="text" inputMode="decimal"
-                  value={formData.totalChargeNGN || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.totalChargeNGN || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly || isCalculatedField("totalChargeNGN")}
+                  disabled={true}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="Charges Collect"
+                  label="Charges Collect (₦)"
                   name="chargesCollect"
-                  type="text" inputMode="decimal"
-                  value={formData.chargesCollect || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.chargesCollect || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly || isCalculatedField("chargesCollect")}
+                  disabled={true}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="Fuel Surcharge"
+                  label="Fuel Surcharge (₦)"
                   name="fuelSurcharge"
-                  type="text" inputMode="decimal"
-                  value={formData.fuelSurcharge || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.fuelSurcharge || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  onBlur={handleBlur}
+                  disabled={effectiveViewOnly}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="SEC Surcharge"
+                  label="SEC Surcharge (₦)"
                   name="secSurcharge"
-                  type="text" inputMode="decimal"
-                  value={formData.secSurcharge || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.secSurcharge || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  onBlur={handleBlur}
+                  disabled={effectiveViewOnly}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="Handling Surcharge"
+                  label="Handling Surcharge (₦)"
                   name="handlingSurcharge"
-                  type="text" inputMode="decimal"
-                  value={formData.handlingSurcharge || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.handlingSurcharge || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  onBlur={handleBlur}
+                  disabled={effectiveViewOnly}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="Surcharge (Agent)"
+                  label="Surcharge Due Agent (₦)"
                   name="surchargeDueAgent"
-                  type="text" inputMode="decimal"
-                  value={formData.surchargeDueAgent || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.surchargeDueAgent || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  onBlur={handleBlur}
+                  disabled={effectiveViewOnly}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="AWB Fee"
+                  label="AWB Fee (₦)"
                   name="awbFee"
-                  type="text" inputMode="decimal"
-                  value={formData.awbFee || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.awbFee || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  onBlur={handleBlur}
+                  disabled={effectiveViewOnly}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="GSA Commission (NGN)"
+                  label="GSA Commission (₦)"
                   name="gsaCommissionNGN"
-                  type="text" inputMode="decimal"
-                  value={formData.gsaCommissionNGN || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.gsaCommissionNGN || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  onBlur={handleBlur}
+                  disabled={effectiveViewOnly}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="VAT (Commission)"
+                  label="VAT on Commission (₦)"
                   name="vatOnCommission"
-                  type="text" inputMode="decimal"
-                  value={formData.vatOnCommission || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.vatOnCommission || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly || isCalculatedField("vatOnCommission")}
+                  disabled={true}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="Amt Due Airline"
+                  label="Amt Due Airline (₦)"
                   name="amtDueAirline"
-                  type="text" inputMode="decimal"
-                  value={formData.amtDueAirline || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.amtDueAirline || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly || isCalculatedField("amtDueAirline")}
+                  disabled={true}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="Due APG Inc"
+                  label="Due APG Inc (₦)"
                   name="dueAPGInc"
-                  type="text" inputMode="decimal"
-                  value={formData.dueAPGInc || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.dueAPGInc || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly || isCalculatedField("dueAPGInc")}
+                  disabled={true}
+                  isCurrency={true}
                 />
                 <InputField
-                  label="Due SLC"
+                  label="Due SLC (₦)"
                   name="dueSLC"
-                  type="text" inputMode="decimal"
-                  value={formData.dueSLC || 0}
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.dueSLC || ""}
                   onChange={handleChange}
-                  disabled={isViewOnly}
+                  onBlur={handleBlur}
+                  disabled={effectiveViewOnly}
+                  isCurrency={true}
                 />
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="p-8 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+          <div className="px-4 py-3.5 sm:px-8 sm:py-5 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-2">
             <button
               onClick={prevStep}
-              className={`flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-2xl transition-all active:scale-95 ${step === 1 ? "opacity-0 pointer-events-none" : "text-gray-600 bg-white border border-gray-200 hover:bg-gray-100"}`}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-bold rounded-xl sm:rounded-2xl transition-all active:scale-95 ${
+                step === 1
+                  ? "opacity-0 pointer-events-none"
+                  : "text-gray-600 bg-white border border-gray-200 hover:bg-gray-100"
+              }`}
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Back</span>
             </button>
 
-            <div className="flex gap-3 mr-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={onClose}
-                className="px-6 py-3 text-sm font-bold text-gray-500 hover:text-gray-700"
+                className="px-3 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
               >
-                {isViewOnly ? "Close" : "Cancel"}
+                {effectiveViewOnly ? "Close" : "Cancel"}
               </button>
 
               {step < 3 ? (
                 <button
                   onClick={nextStep}
                   style={{ backgroundColor: color }}
-                  className="flex items-center gap-2 px-8 py-3 text-sm font-bold text-white rounded-2xl shadow-xl shadow-blue-100 hover:shadow-blue-200 transition-all active:scale-95"
+                  className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-8 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white rounded-xl sm:rounded-2xl shadow-md sm:shadow-xl shadow-blue-100 hover:shadow-blue-200 transition-all active:scale-95"
                 >
-                  <span className="text-nowrap">Next Step</span>
+                  <span className="whitespace-nowrap">Next Step</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
-              ) : !isViewOnly ? (
+              ) : !effectiveViewOnly ? (
                 <button
                   onClick={handleSubmit}
                   disabled={isUpdating}
                   style={{ backgroundColor: isUpdating ? "#f3f4f6" : color }}
-                  className={`flex items-center gap-2 px-8 py-3 text-sm font-bold rounded-2xl transition-all active:scale-95 ${isUpdating ? "text-gray-400 border border-gray-200" : "text-white shadow-xl shadow-blue-100 hover:shadow-blue-200"}`}
+                  className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-8 py-2.5 sm:py-3 text-xs sm:text-sm font-bold rounded-xl sm:rounded-2xl transition-all active:scale-95 ${
+                    isUpdating
+                      ? "text-gray-400 border border-gray-200"
+                      : "text-white shadow-md sm:shadow-xl shadow-blue-100 hover:shadow-blue-200"
+                  }`}
                 >
                   {isUpdating ? (
                     <>
@@ -554,7 +701,7 @@ const EditFinancialsModal = ({
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      <span>Save Changes</span>
+                      <span className="whitespace-nowrap">Save Changes</span>
                     </>
                   )}
                 </button>

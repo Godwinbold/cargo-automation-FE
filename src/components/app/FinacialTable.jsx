@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import ReactDOM from "react-dom";
-import { MoreVertical, Edit2, Eye, Trash2, Download, X } from "lucide-react";
+import { MoreVertical, Edit2, Eye, Trash2, X } from "lucide-react";
 import Pagination from "./Pagination";
+import { formatShipmentId } from "../../utils/shipmentUtils";
 
 // Action Menu Portal Component (Mobile Bottom Sheet + Desktop Clamped Popover)
 const ActionMenuPortal = ({
@@ -10,9 +11,9 @@ const ActionMenuPortal = ({
   onEdit,
   onView,
   onDelete,
-  onExport,
   id,
   item,
+  isLocked,
 }) => {
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
@@ -142,19 +143,6 @@ const ActionMenuPortal = ({
           <div className="flex flex-col gap-1">
             <button
               onClick={() => {
-                onEdit && onEdit(id);
-                onClose();
-              }}
-              className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
-            >
-              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
-                <Edit2 className="w-4 h-4" />
-              </div>
-              <span>Edit Financial</span>
-            </button>
-
-            <button
-              onClick={() => {
                 onView && onView(id);
                 onClose();
               }}
@@ -166,33 +154,44 @@ const ActionMenuPortal = ({
               <span>View Financial</span>
             </button>
 
-            <button
-              onClick={() => {
-                onExport && onExport(id);
-                onClose();
-              }}
-              className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
-            >
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 flex-shrink-0">
-                <Download className="w-4 h-4" />
-              </div>
-              <span>Export as CSV</span>
-            </button>
+            {!isLocked && (
+              <>
+                <button
+                  onClick={() => {
+                    onEdit && onEdit(id);
+                    onClose();
+                  }}
+                  className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                    <Edit2 className="w-4 h-4" />
+                  </div>
+                  <span>Edit Financial</span>
+                </button>
 
-            <div className="h-px bg-gray-100 my-1" />
+                <div className="h-px bg-gray-100 my-1" />
 
-            <button
-              onClick={() => {
-                onDelete && onDelete(id);
-                onClose();
-              }}
-              className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 active:bg-red-100 rounded-xl transition-colors"
-            >
-              <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-600 flex-shrink-0">
-                <Trash2 className="w-4 h-4" />
+                <button
+                  onClick={() => {
+                    onDelete && onDelete(id);
+                    onClose();
+                  }}
+                  className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 active:bg-red-100 rounded-xl transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-600 flex-shrink-0">
+                    <Trash2 className="w-4 h-4" />
+                  </div>
+                  <span>Delete Financial</span>
+                </button>
+              </>
+            )}
+
+            {isLocked && (
+              <div className="px-4 py-2 mt-1 bg-amber-50 border border-amber-200 rounded-xl text-xs font-medium text-amber-800 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                Locked (Shipment has been booked)
               </div>
-              <span>Delete Financial</span>
-            </button>
+            )}
           </div>
 
           {/* Cancel Button */}
@@ -224,45 +223,47 @@ const ActionMenuPortal = ({
     >
       <button
         onClick={() => {
-          onEdit && onEdit(id);
-          onClose();
-        }}
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-all font-medium"
-      >
-        <Edit2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
-        Edit Financial
-      </button>
-      <button
-        onClick={() => {
           onView && onView(id);
           onClose();
         }}
         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-all font-medium"
       >
-        <Eye className="w-4 h-4 text-green-500 flex-shrink-0" />
+        <Eye className="w-4 h-4 text-emerald-500 flex-shrink-0" />
         View Financial
       </button>
-      <button
-        onClick={() => {
-          onExport && onExport(id);
-          onClose();
-        }}
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-all font-medium"
-      >
-        <Download className="w-4 h-4 text-blue-600 flex-shrink-0" />
-        Export as CSV
-      </button>
-      <div className="h-px bg-gray-100 my-1 mx-2" />
-      <button
-        onClick={() => {
-          onDelete && onDelete(id);
-          onClose();
-        }}
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all font-medium"
-      >
-        <Trash2 className="w-4 h-4 flex-shrink-0" />
-        Delete Financial
-      </button>
+
+      {!isLocked && (
+        <>
+          <button
+            onClick={() => {
+              onEdit && onEdit(id);
+              onClose();
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-all font-medium"
+          >
+            <Edit2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+            Edit Financial
+          </button>
+          <div className="h-px bg-gray-100 my-1 mx-2" />
+          <button
+            onClick={() => {
+              onDelete && onDelete(id);
+              onClose();
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all font-medium"
+          >
+            <Trash2 className="w-4 h-4 flex-shrink-0" />
+            Delete Financial
+          </button>
+        </>
+      )}
+
+      {isLocked && (
+        <div className="px-3 py-2 text-[11px] font-medium text-amber-700 bg-amber-50 border-t border-amber-100 mt-1 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+          Locked (Shipment booked)
+        </div>
+      )}
     </div>,
     document.body,
   );
@@ -279,7 +280,7 @@ const FinancialTable = ({
   onEdit,
   onView,
   onDelete,
-  onExport,
+  shipmentStatusMap = {},
 }) => {
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [buttonRect, setButtonRect] = useState(null);
@@ -288,6 +289,7 @@ const FinancialTable = ({
   // Optimized headers mapping strictly matching user requirements
   const headerMapping = [
     { label: "S/N", key: "sn" },
+    { label: "Shipment ID", key: "shipmentId" },
     { label: "MAWB", key: "mawb" },
     { label: "Agent/Client", key: "agentsOrClients" },
     { label: "Date of Issue", key: "dateOfIssue" },
@@ -305,6 +307,16 @@ const FinancialTable = ({
 
   const renderCellValue = (item, sn, key) => {
     if (key === "sn") return sn;
+    if (key === "shipmentId") {
+      const val = item.shipmentId || item.shipment?.id;
+      return val ? (
+        <span className="font-mono text-xs font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100 whitespace-nowrap">
+          {formatShipmentId(val)}
+        </span>
+      ) : (
+        "-"
+      );
+    }
     if (key === "dateOfIssue") return formatDate(item[key]);
 
     const value = item[key];
@@ -398,18 +410,29 @@ const FinancialTable = ({
       </div>
 
       {/* Render Action Menu in a Portal */}
-      {activeMenuId && buttonRect && (
-        <ActionMenuPortal
-          id={activeMenuId}
-          item={data.find((d) => d.id === activeMenuId)}
-          buttonRect={buttonRect}
-          onClose={() => setActiveMenuId(null)}
-          onEdit={onEdit}
-          onView={onView}
-          onDelete={onDelete}
-          onExport={onExport}
-        />
-      )}
+      {activeMenuId && buttonRect && (() => {
+        const currentItem = data.find((d) => d.id === activeMenuId);
+        const status =
+          currentItem?.shipmentStatus ||
+          currentItem?.shipment?.statusDisplay ||
+          shipmentStatusMap[currentItem?.shipmentId];
+        const isLocked =
+          currentItem?.isLocked ||
+          ["Booked", "Flown", "Delivered"].includes(status);
+
+        return (
+          <ActionMenuPortal
+            id={activeMenuId}
+            item={currentItem}
+            isLocked={isLocked}
+            buttonRect={buttonRect}
+            onClose={() => setActiveMenuId(null)}
+            onEdit={onEdit}
+            onView={onView}
+            onDelete={onDelete}
+          />
+        );
+      })()}
 
       {/* Pagination component */}
       {totalPages > 0 && (

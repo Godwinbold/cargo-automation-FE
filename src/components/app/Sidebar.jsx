@@ -14,7 +14,7 @@ const Sidebar = ({ setMobileMenuOpen, color, name }) => {
   const navItems = [
     {
       to: `/${name}-dashboard${airlineId ? `?airlineId=${airlineId}` : ""}`,
-      label: "Financial",
+      label: "All Financials",
       icon: "/icons/financial.svg",
     },
     {

@@ -9,13 +9,17 @@ export const CALCULATED_FINANCIAL_FIELDS = [
 ];
 
 const toNum = (value) => {
-  const n = parseFloat(value);
+  if (value === null || value === undefined || value === "") return 0;
+  const n = parseFloat(String(value).replace(/,/g, ""));
   return Number.isNaN(n) ? 0 : n;
 };
 
 const toDisplayValue = (value) => {
   const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
-  return String(rounded);
+  return rounded.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 };
 
 export const applyFinancialCalculations = (data) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -7,21 +7,28 @@ import {
   useAddShipmentNote,
   useDeleteShipment,
   useChangeShipmentStatus,
+  useGetAirlinesFinancials,
 } from "../../hooks/useShipment";
+import shipmentApi from "../../api/shipment";
 import {
   Eye,
   MessageSquarePlus,
   Trash2,
   CircleDollarSign,
   FileUp,
+  FolderOpen,
   MoreVertical,
   RefreshCw,
   X,
+  Edit2,
 } from "lucide-react";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import CreateFinancialsModal from "./CreateFinancialsModal";
+import EditFinancialsModal from "./EditFinancialsModal";
 import UploadDocumentModal from "./UploadDocumentModal";
+import ShipmentDocumentsModal from "./ShipmentDocumentsModal";
 import ChangeStatusModal from "./ChangeStatusModal";
+import { formatShipmentId } from "../../utils/shipmentUtils";
 
 const STATUS_FLOW = ["Accepted", "Booked", "Flown", "Delivered"];
 
@@ -40,7 +47,12 @@ const ActionMenuPortal = ({
   onAddNote,
   onChangeStatus,
   onCreateFinancials,
+  onViewFinancial,
+  onEditFinancial,
+  hasFinancial,
+  isBookedOrBeyond,
   onUploadDocument,
+  onViewDocuments,
   onDelete,
   item,
 }) => {
@@ -225,17 +237,62 @@ const ActionMenuPortal = ({
               </span>
             </button>
 
+            {hasFinancial ? (
+              <>
+                <button
+                  onClick={() => {
+                    onViewFinancial(item);
+                    onClose();
+                  }}
+                  className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                    <CircleDollarSign className="w-4 h-4" />
+                  </div>
+                  <span>View Financial</span>
+                </button>
+
+                {!isBookedOrBeyond && (
+                  <button
+                    onClick={() => {
+                      onEditFinancial(item);
+                      onClose();
+                    }}
+                    className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                      <Edit2 className="w-4 h-4" />
+                    </div>
+                    <span>Edit Financial</span>
+                  </button>
+                )}
+              </>
+            ) : (
+              <button
+                onClick={() => {
+                  onCreateFinancials(item);
+                  onClose();
+                }}
+                className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+              >
+                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 flex-shrink-0">
+                  <CircleDollarSign className="w-4 h-4" />
+                </div>
+                <span>Create Financials</span>
+              </button>
+            )}
+
             <button
               onClick={() => {
-                onCreateFinancials(item);
+                onViewDocuments(item);
                 onClose();
               }}
               className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
             >
-              <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 flex-shrink-0">
-                <CircleDollarSign className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                <FolderOpen className="w-4 h-4" />
               </div>
-              <span>Create Financials</span>
+              <span>View Documents</span>
             </button>
 
             <button
@@ -326,15 +383,52 @@ const ActionMenuPortal = ({
           ? "Status (Delivered)"
           : "Change Status"}
       </button>
+      {hasFinancial ? (
+        <>
+          <button
+            onClick={() => {
+              onViewFinancial(item);
+              onClose();
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+          >
+            <CircleDollarSign className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+            View Financial
+          </button>
+          {!isBookedOrBeyond && (
+            <button
+              onClick={() => {
+                onEditFinancial(item);
+                onClose();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+            >
+              <Edit2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+              Edit Financial
+            </button>
+          )}
+        </>
+      ) : (
+        <button
+          onClick={() => {
+            onCreateFinancials(item);
+            onClose();
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+        >
+          <CircleDollarSign className="w-4 h-4 text-orange-500 flex-shrink-0" />
+          Create Financials
+        </button>
+      )}
       <button
         onClick={() => {
-          onCreateFinancials(item);
+          onViewDocuments(item);
           onClose();
         }}
         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
       >
-        <CircleDollarSign className="w-4 h-4 text-orange-500 flex-shrink-0" />
-        Create Financials
+        <FolderOpen className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+        View Documents
       </button>
       <button
         onClick={() => {
@@ -391,9 +485,74 @@ const ShipmentTable = ({
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [shipmentToDelete, setShipmentToDelete] = useState(null);
   const [showFinancialsModal, setShowFinancialsModal] = useState(false);
+  const [showEditFinancialsModal, setShowEditFinancialsModal] = useState(false);
+  const [selectedFinancial, setSelectedFinancial] = useState(null);
+  const [isFinancialViewOnly, setIsFinancialViewOnly] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState(null);
   const buttonRefs = useRef({});
+
+  const { data: financialsData } = useGetAirlinesFinancials(airlineId, {
+    pageSize: 1000,
+  });
+
+  const financialsByShipmentId = useMemo(() => {
+    const map = {};
+    const list = financialsData?.data?.data || financialsData?.data || [];
+    if (Array.isArray(list)) {
+      list.forEach((f) => {
+        if (f.shipmentId) {
+          map[f.shipmentId] = f;
+        }
+      });
+    }
+    return map;
+  }, [financialsData]);
+
+  const handleViewFinancial = async (shipment) => {
+    let fin = financialsByShipmentId[shipment?.id];
+    if (!fin && shipment?.id) {
+      try {
+        const res = await shipmentApi.getFinancial(airlineId, shipment.id);
+        fin = res?.data || res;
+      } catch (err) {
+        console.error("Error fetching financial:", err);
+      }
+    }
+    if (fin) {
+      setSelectedFinancial({
+        ...fin,
+        shipmentStatus: shipment?.statusDisplay || fin.shipmentStatus,
+      });
+      setIsFinancialViewOnly(true);
+      setShowEditFinancialsModal(true);
+    } else {
+      toast.info("No financial record found for this shipment.");
+    }
+  };
+
+  const handleEditFinancial = async (shipment) => {
+    let fin = financialsByShipmentId[shipment?.id];
+    if (!fin && shipment?.id) {
+      try {
+        const res = await shipmentApi.getFinancial(airlineId, shipment.id);
+        fin = res?.data || res;
+      } catch (err) {
+        console.error("Error fetching financial:", err);
+      }
+    }
+    if (fin) {
+      setSelectedFinancial({
+        ...fin,
+        shipmentStatus: shipment?.statusDisplay || fin.shipmentStatus,
+      });
+      setIsFinancialViewOnly(false);
+      setShowEditFinancialsModal(true);
+    } else {
+      toast.info("No financial record found for this shipment.");
+    }
+  };
 
   // Close menu on click outside is now handled in ActionMenuPortal
   // but we still need to clear activeMenuId when a modal opens or on item select
@@ -540,11 +699,16 @@ const ShipmentTable = ({
               key={`card-${item.id}`}
               className="bg-white rounded-xl border border-gray-200/90 p-3.5 shadow-sm hover:shadow-md transition-shadow"
             >
-              {/* Row 1: Airway Bill Number (left) & Action Button (right) */}
+              {/* Row 1: Airway Bill Number & Shipment ID (left) & Action Button (right) */}
               <div className="flex items-center justify-between gap-2 mb-2.5">
                 <div className="min-w-0">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                    Airway Bill Number
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Airway Bill
+                    </span>
+                    <span className="font-mono text-[11px] font-bold bg-blue-50 text-blue-700 px-1.5 py-0.2 rounded border border-blue-100">
+                      {formatShipmentId(item.id)}
+                    </span>
                   </div>
                   <div className="font-bold text-gray-900 text-base tracking-tight truncate">
                     {item.airwayBillNumber}
@@ -609,6 +773,9 @@ const ShipmentTable = ({
             <thead>
               <tr className="bg-gray-50/80">
                 <th className="border-b border-gray-200 px-4 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  Shipment ID
+                </th>
+                <th className="border-b border-gray-200 px-4 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                   Airway Bill Number
                 </th>
                 <th className="border-b border-gray-200 px-4 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
@@ -626,6 +793,11 @@ const ShipmentTable = ({
               {data?.map((item) => {
                 return (
                   <tr key={item.id} className="hover:bg-gray-50 transition">
+                    <td className="border-b border-gray-300 px-4 py-3">
+                      <span className="font-mono text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded border border-blue-100">
+                        {formatShipmentId(item.id)}
+                      </span>
+                    </td>
                     <td className="border-b border-gray-300 px-4 py-3 font-medium text-gray-900">
                       {item.airwayBillNumber}
                     </td>
@@ -700,6 +872,15 @@ const ShipmentTable = ({
         <ActionMenuPortal
           item={activeMenuDoc}
           buttonRect={buttonRect}
+          hasFinancial={Boolean(
+            activeMenuDoc?.hasFinancial ??
+              activeMenuDoc?.["has-financial"] ??
+              activeMenuDoc?.hasFinancials ??
+              financialsByShipmentId[activeMenuDoc?.id],
+          )}
+          isBookedOrBeyond={["Booked", "Flown", "Delivered"].includes(
+            activeMenuDoc?.statusDisplay,
+          )}
           onClose={() => {
             setActiveMenuId(null);
             setActiveMenuDoc(null);
@@ -715,9 +896,15 @@ const ShipmentTable = ({
             setSelectedShipment(item);
             setShowFinancialsModal(true);
           }}
+          onViewFinancial={handleViewFinancial}
+          onEditFinancial={handleEditFinancial}
           onUploadDocument={(item) => {
             setSelectedShipment(item);
             setShowUploadModal(true);
+          }}
+          onViewDocuments={(item) => {
+            setSelectedShipment(item);
+            setShowDocumentsModal(true);
           }}
           onDelete={handleDeleteClick}
         />
@@ -756,7 +943,10 @@ const ShipmentTable = ({
               {modalMode === "view" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-3">
-                    <DetailItem label="Shipment ID" value={currentRow?.id} />
+                    <DetailItem
+                      label="Shipment ID"
+                      value={formatShipmentId(currentRow?.id)}
+                    />
                     <DetailItem
                       label="Airline ID"
                       value={currentRow?.airlineId}
@@ -903,12 +1093,39 @@ const ShipmentTable = ({
         color={color}
       />
 
+      <EditFinancialsModal
+        isOpen={showEditFinancialsModal}
+        onClose={() => {
+          setShowEditFinancialsModal(false);
+          setSelectedFinancial(null);
+        }}
+        financialData={selectedFinancial}
+        airlineId={airlineId}
+        color={color}
+        isViewOnly={isFinancialViewOnly}
+        isLocked={["Booked", "Flown", "Delivered"].includes(
+          selectedFinancial?.shipmentStatus ||
+            selectedFinancial?.shipment?.statusDisplay,
+        )}
+      />
+
       <UploadDocumentModal
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         airlineId={airlineId}
         shipmentId={selectedShipment?.id}
         airwayBillNumber={selectedShipment?.airwayBillNumber}
+        color={color}
+      />
+
+      <ShipmentDocumentsModal
+        isOpen={showDocumentsModal}
+        onClose={() => {
+          setShowDocumentsModal(false);
+          setSelectedShipment(null);
+        }}
+        airlineId={airlineId}
+        shipment={selectedShipment}
         color={color}
       />
 

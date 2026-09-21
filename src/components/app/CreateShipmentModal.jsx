@@ -2,7 +2,21 @@ import React, { useState } from "react";
 import { useCreateShipment } from "../../hooks/useShipment";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Lock } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+
+const STATUS_OPTIONS = [
+  { value: "Accepted", label: "Accepted", desc: "Shipment received" },
+  { value: "Booked", label: "Booked", desc: "Scheduled for flight" },
+  { value: "Flown", label: "Flown", desc: "Departed on flight" },
+  { value: "Delivered", label: "Delivered", desc: "Delivered to destination" },
+];
+
+const STATUS_MAP = {
+  Accepted: 0,
+  Booked: 1,
+  Flown: 2,
+  Delivered: 3,
+};
 
 const CreateShipmentModal = ({ isOpen, onClose, airlineId, color }) => {
   const queryClient = useQueryClient();
@@ -32,7 +46,7 @@ const CreateShipmentModal = ({ isOpen, onClose, airlineId, color }) => {
 
     const payload = {
       airwayBillNumber: newShipment.airwayBillNumber.trim(),
-      status: 0, // Initial status is always 0 (Accepted)
+      status: STATUS_MAP[newShipment.status] ?? 0,
       shipmentDate: new Date(newShipment.date).toISOString(),
     };
 
@@ -110,26 +124,39 @@ const CreateShipmentModal = ({ isOpen, onClose, airlineId, color }) => {
                 <label className="block text-sm font-medium text-gray-700">
                   Status
                 </label>
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  <Lock size={11} />
-                  Initial Status
-                </span>
+                {newShipment.status === "Accepted" ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Initial Stage
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    Historical Stage
+                  </span>
+                )}
               </div>
               <div className="relative">
-                <input
-                  type="text"
-                  value="Accepted"
-                  disabled
-                  readOnly
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-semibold cursor-not-allowed select-none"
-                />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Accepted
-                </div>
+                <select
+                  value={newShipment.status}
+                  onChange={(e) =>
+                    setNewShipment({
+                      ...newShipment,
+                      status: e.target.value,
+                    })
+                  }
+                  className={`${inputClass} appearance-none cursor-pointer pr-10 bg-white font-medium text-gray-800`}
+                >
+                  {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label} ({opt.desc})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
               </div>
               <p className="text-[11px] text-gray-400 mt-1">
-                New shipments always start as Accepted. Progression can be updated after creation.
+                Choose the preferred status. For past shipments, you can select their current stage directly.
               </p>
             </div>
 
