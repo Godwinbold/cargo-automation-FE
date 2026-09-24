@@ -89,7 +89,7 @@ export const LOGIN_NAME_CONFIGS = {
     endpoint: "/api/login/turkish",
     signupLink: "/register?name=turkish",
     forgotPasswordLink: "/forgot-password?name=turkish",
-    redirectTo: "/turkish-dashboard",
+    redirectTo: "/turkish-dashboard/shipment",
   },
   rwandair: {
     logoSrc: "/icons/rwandair.svg",
@@ -97,7 +97,7 @@ export const LOGIN_NAME_CONFIGS = {
     endpoint: "/api/login/rwandair",
     signupLink: "/register?name=rwandair",
     forgotPasswordLink: "/forgot-password?name=rwandair",
-    redirectTo: "/rwanda-dashboard",
+    redirectTo: "/rwanda-dashboard/shipment",
   },
   united: {
     logoSrc: "/icons/united.svg",
@@ -105,7 +105,7 @@ export const LOGIN_NAME_CONFIGS = {
     endpoint: "/api/login/united",
     signupLink: "/register?name=united",
     forgotPasswordLink: "/forgot-password?name=united",
-    redirectTo: "/united-dashboard",
+    redirectTo: "/united-dashboard/shipment",
   },
   southafrica: {
     logoSrc: "/icons/south-africa.svg",
@@ -113,7 +113,7 @@ export const LOGIN_NAME_CONFIGS = {
     endpoint: "/api/login/southafrica",
     signupLink: "/register?name=southafrica",
     forgotPasswordLink: "/forgot-password?name=southafrica",
-    redirectTo: "/south-africa-dashboard",
+    redirectTo: "/south-africa-dashboard/shipment",
   },
   codiv: {
     logoSrc: "/icons/codiv.svg",
@@ -121,6 +121,6 @@ export const LOGIN_NAME_CONFIGS = {
     endpoint: "/api/login/codiv",
     signupLink: "/register?name=codiv",
     forgotPasswordLink: "/forgot-password?name=codiv",
-    redirectTo: "/cotedivoire-dashboard",
+    redirectTo: "/cotedivoire-dashboard/shipment",
   },
 };

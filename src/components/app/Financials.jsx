@@ -7,7 +7,7 @@ import {
   useGetShipments,
 } from "../../hooks/useShipment";
 import { GetFromLocalStorage } from "../../utils/getFromLocals";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import ShipmentFilters from "./ShipmentFilters";
 import EditFinancialsModal from "./EditFinancialsModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
@@ -17,6 +17,7 @@ import { Download } from "lucide-react";
 import { formatShipmentId } from "../../utils/shipmentUtils";
 
 const Financials = ({ color, name }) => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const airlineIdFromQuery = searchParams.get("airlineId");
@@ -84,6 +85,19 @@ const Financials = ({ color, name }) => {
       setIsViewOnly(mode === "view" || locked);
       setIsEditModalOpen(true);
     }
+  };
+
+  const handleViewDetails = (id, item) => {
+    const targetItem = item || financialItems.find((f) => f.id === id);
+    const targetId = id || targetItem?.id || targetItem?.shipmentId;
+    navigate(
+      `/${name}-dashboard/financials/${targetId}${
+        airlineId ? `?airlineId=${airlineId}` : ""
+      }`,
+      {
+        state: { financial: targetItem },
+      },
+    );
   };
 
   const handleCloseModal = () => {
@@ -340,7 +354,7 @@ const Financials = ({ color, name }) => {
                 pageSize={pageSize}
                 onPageSizeChange={setPageSize}
                 onEdit={(id) => handleOpenModal(id, "edit")}
-                onView={(id) => handleOpenModal(id, "view")}
+                onView={handleViewDetails}
                 onDelete={handleDeleteClick}
               />
             </div>

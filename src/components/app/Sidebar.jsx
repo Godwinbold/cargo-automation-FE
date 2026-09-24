@@ -13,16 +13,18 @@ const Sidebar = ({ setMobileMenuOpen, color, name }) => {
   // Define your navigation items
   const navItems = [
     {
-      to: `/${name}-dashboard${airlineId ? `?airlineId=${airlineId}` : ""}`,
-      label: "All Financials",
-      icon: "/icons/financial.svg",
-    },
-    {
-      to: `/${name}-dashboard/manage-shipping${
+      to: `/${name}-dashboard/shipment${
         airlineId ? `?airlineId=${airlineId}` : ""
       }`,
       label: "Manage Shipments",
       icon: "/icons/shipment.svg",
+    },
+    {
+      to: `/${name}-dashboard/financials${
+        airlineId ? `?airlineId=${airlineId}` : ""
+      }`,
+      label: "All Financials",
+      icon: "/icons/financial.svg",
     },
     {
       to: `/${name}-dashboard/document${
@@ -39,9 +41,37 @@ const Sidebar = ({ setMobileMenuOpen, color, name }) => {
     const currentPath = location.pathname;
     const targetPath = path.split("?")[0];
 
-    if (targetPath === `/${name}-dashboard`) {
-      return currentPath === `/${name}-dashboard` || currentPath === `/${name}-dashboard/`;
+    // If on dashboard root, "Manage Shipments" (the first item) is active
+    if (
+      currentPath === `/${name}-dashboard` ||
+      currentPath === `/${name}-dashboard/`
+    ) {
+      return (
+        targetPath.endsWith("/shipment") ||
+        targetPath.endsWith("/manage-shipping")
+      );
     }
+
+    // Match shipment and manage-shipping interchangeably
+    if (
+      (currentPath.includes("/shipment") ||
+        currentPath.includes("/manage-shipping")) &&
+      (targetPath.endsWith("/shipment") ||
+        targetPath.endsWith("/manage-shipping"))
+    ) {
+      return true;
+    }
+
+    // Match financial and financials interchangeably
+    if (
+      (currentPath.includes("/financials") ||
+        currentPath.includes("/financial")) &&
+      (targetPath.endsWith("/financials") ||
+        targetPath.endsWith("/financial"))
+    ) {
+      return true;
+    }
+
     return currentPath.startsWith(targetPath);
   };
 

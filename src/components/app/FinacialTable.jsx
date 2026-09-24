@@ -143,7 +143,7 @@ const ActionMenuPortal = ({
           <div className="flex flex-col gap-1">
             <button
               onClick={() => {
-                onView && onView(id);
+                onView && onView(id, item);
                 onClose();
               }}
               className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
@@ -223,7 +223,7 @@ const ActionMenuPortal = ({
     >
       <button
         onClick={() => {
-          onView && onView(id);
+          onView && onView(id, item);
           onClose();
         }}
         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-all font-medium"

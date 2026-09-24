@@ -18,7 +18,7 @@ const DashboardFooter = ({ color, name }) => {
         {/* Right Section: Copyright */}
         <div className="flex items-center text-sm gap-1 md:gap-2 max-w-md">
           <Link
-            to={`manage-shipping${
+            to={`shipment${
               localStorage.getItem("airlineId")
                 ? `?airlineId=${localStorage.getItem("airlineId")}`
                 : ""

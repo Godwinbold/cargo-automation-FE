@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useGetAuditLogs, useGetAppUsers } from "../../../hooks/useAdmin";
-import { Search, Calendar, User, ShieldAlert, RefreshCw, X, Filter, ArrowRight } from "lucide-react";
+import { Search, Calendar, User, ShieldAlert, RefreshCw, X, Filter, ArrowRight, Copy, Check } from "lucide-react";
 import Pagination from "../Pagination";
+import { toast } from "sonner";
 
 const renderChanges = (changesString) => {
   if (!changesString) {
@@ -154,6 +155,26 @@ const AdminAuditLogs = () => {
   const [toDate, setToDate] = useState("");
   const [selectedLog, setSelectedLog] = useState(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(null);
+
+  const handleCopyText = (text, key, label = "ID") => {
+    if (!text) return;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopiedKey(key);
+    toast.success(`${label} copied to clipboard!`);
+    setTimeout(() => {
+      setCopiedKey((prev) => (prev === key ? null : prev));
+    }, 2000);
+  };
 
   // Fetch users for the filter dropdown
   const { data: usersResponse } = useGetAppUsers({
@@ -325,11 +346,37 @@ const AdminAuditLogs = () => {
                         </div>
                         <div className="ml-3">
                           <div className="text-sm font-medium text-gray-900">
-                            {log.userName || "System / Guest"}
+                            {log.userName || "N/A"}
                           </div>
-                          <div className="text-xs text-gray-500">
-                            {log.userEmail || `ID: ${log.userId?.substring(0, 8) || "N/A"}`}
-                          </div>
+                          {log.userEmail && (
+                            <div className="text-xs text-gray-500">
+                              {log.userEmail}
+                            </div>
+                          )}
+                          {log.userId && (
+                            <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                              <button
+                                type="button"
+                                onClick={() => handleCopyText(log.userId, `user-id-${log.id || log.userId}`, "User ID")}
+                                className="p-0.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                                title={copiedKey === `user-id-${log.id || log.userId}` ? "Copied!" : "Copy User ID"}
+                                aria-label="Copy User ID"
+                              >
+                                {copiedKey === `user-id-${log.id || log.userId}` ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                              <span
+                                title={log.userId}
+                                onClick={() => handleCopyText(log.userId, `user-id-${log.id || log.userId}`, "User ID")}
+                                className="font-mono cursor-pointer hover:text-gray-800"
+                              >
+                                ID: {log.userId.substring(0, 8)}...
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -347,8 +394,27 @@ const AdminAuditLogs = () => {
                         {log.entityName || "-"}
                       </div>
                       {log.entityId && (
-                        <div className="text-xs text-gray-500">
-                          ID: {log.entityId.substring(0, 8)}...
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(log.entityId, `entity-id-${log.id || log.entityId}`, "Entity ID")}
+                            className="p-0.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                            title={copiedKey === `entity-id-${log.id || log.entityId}` ? "Copied!" : "Copy Entity ID"}
+                            aria-label="Copy Entity ID"
+                          >
+                            {copiedKey === `entity-id-${log.id || log.entityId}` ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                          <span
+                            title={log.entityId}
+                            onClick={() => handleCopyText(log.entityId, `entity-id-${log.id || log.entityId}`, "Entity ID")}
+                            className="font-mono cursor-pointer hover:text-gray-800"
+                          >
+                            ID: {log.entityId.substring(0, 8)}...
+                          </span>
                         </div>
                       )}
                     </td>
@@ -448,16 +514,8 @@ const AdminAuditLogs = () => {
                   </div>
                 </div>
 
-                {/* Log ID */}
-                <div className="grid grid-cols-1 gap-1">
-                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Log ID</label>
-                  <span className="text-sm font-mono text-gray-800 bg-gray-50 px-2 py-1 rounded border border-gray-100 break-all select-all">
-                    {selectedLog.id}
-                  </span>
-                </div>
-
-                {/* User Info */}
-                <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-3">
+                {/* User & Entity Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-50 pt-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">User Email</label>
                     <span className="text-sm font-medium text-gray-950 block truncate" title={selectedLog.userEmail}>
@@ -465,25 +523,9 @@ const AdminAuditLogs = () => {
                     </span>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">User ID</label>
-                    <span className="text-sm text-gray-700 block truncate font-mono" title={selectedLog.userId}>
-                      {selectedLog.userId || "N/A"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Entity Info */}
-                <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-3">
-                  <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Entity Name</label>
                     <span className="text-sm font-medium text-gray-950 block">
                       {selectedLog.entityName || "-"}
-                    </span>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Entity ID</label>
-                    <span className="text-sm text-gray-700 block truncate font-mono" title={selectedLog.entityId}>
-                      {selectedLog.entityId || "N/A"}
                     </span>
                   </div>
                 </div>

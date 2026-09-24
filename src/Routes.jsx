@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import Home from "./components/landing/Home";
 import Login from "./pages/auth/Login";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -22,6 +22,57 @@ import AdminAirlines from "./components/app/admin/AdminAirlines";
 import AdminAuditLogs from "./components/app/admin/AdminAuditLogs";
 import NotFound from "./pages/NotFound";
 import ChangePasswordPage from "./components/auth/ChangePassword";
+import FinancialDetailsPage from "./components/app/FinancialDetailsPage";
+import ShipmentDetailsPage from "./components/app/ShipmentDetailsPage";
+import { useGetAllAirlines } from "./hooks/useGeneral";
+import airlineMetadata from "./components/landing/AirlineMetadata";
+
+const ShipmentRedirect = () => {
+  const [searchParams] = useSearchParams();
+  const airlineId =
+    searchParams.get("airlineId") || localStorage.getItem("airlineId");
+  const { data: airlinesData, isLoading } = useGetAllAirlines({
+    enabled: !!airlineId,
+  });
+
+  const slugToDashboard = {
+    turkish: "/turkish-dashboard",
+    rwandair: "/rwanda-dashboard",
+    united: "/united-dashboard",
+    southafrica: "/south-africa-dashboard",
+    codiv: "/cotedivoire-dashboard",
+  };
+
+  if (!airlineId) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3DA5E0]"></div>
+      </div>
+    );
+  }
+
+  const airline = airlinesData?.data?.find((a) => a.id === airlineId);
+  const metadata = airline
+    ? airlineMetadata[airline.airlineName] || {
+        slug: airline.airlineName.toLowerCase().replace(/\s+/g, ""),
+      }
+    : null;
+
+  const dashboardPrefix = metadata?.slug
+    ? slugToDashboard[metadata.slug] || `/${metadata.slug}-dashboard`
+    : "/united-dashboard";
+
+  return (
+    <Navigate
+      to={`${dashboardPrefix}/shipment?airlineId=${airlineId}`}
+      replace
+    />
+  );
+};
 
 const AppRoutes = () => {
   return (
@@ -36,7 +87,6 @@ const AppRoutes = () => {
         <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/executive-login" element={<ExecutiveLogin />} />
 
-       
         <Route
           path="/executive-forgot-password"
           element={<ExecutiveForgotPasswordPage />}
@@ -69,6 +119,15 @@ const AppRoutes = () => {
         </Route>
 
         <Route
+          path="/shipment"
+          element={
+            <AuthGuard allowedRoles={["USER"]}>
+              <ShipmentRedirect />
+            </AuthGuard>
+          }
+        />
+
+        <Route
           path="/united-dashboard"
           element={
             <AuthGuard allowedRoles={["USER"]}>
@@ -76,12 +135,54 @@ const AppRoutes = () => {
             </AuthGuard>
           }
         >
-          <Route index element={<Dashboard color={"#04549B"} />} />
+          <Route
+            index
+            element={<ManageShipping color={"#04549B"} name="united" />}
+          />
+          <Route
+            path="shipment"
+            element={<ManageShipping color={"#04549B"} name="united" />}
+          />
+          <Route
+            path="shipment/:id"
+            element={
+              <ShipmentDetailsPage color={"#04549B"} name="united" />
+            }
+          />
           <Route
             path="manage-shipping"
-            element={<ManageShipping color={"#04549B"} />}
+            element={<ManageShipping color={"#04549B"} name="united" />}
           />
-          <Route path="document" element={<Documents color={"#04549B"} />} />
+          <Route
+            path="manage-shipping/:id"
+            element={
+              <ShipmentDetailsPage color={"#04549B"} name="united" />
+            }
+          />
+          <Route
+            path="financials"
+            element={<Dashboard color={"#04549B"} name="united" />}
+          />
+          <Route
+            path="financials/:id"
+            element={
+              <FinancialDetailsPage color={"#04549B"} name="united" />
+            }
+          />
+          <Route
+            path="financial-details/:id"
+            element={
+              <FinancialDetailsPage color={"#04549B"} name="united" />
+            }
+          />
+          <Route
+            path="financial"
+            element={<Dashboard color={"#04549B"} name="united" />}
+          />
+          <Route
+            path="document"
+            element={<Documents color={"#04549B"} name="united" />}
+          />
         </Route>
         <Route
           path="/turkish-dashboard"
@@ -93,11 +194,47 @@ const AppRoutes = () => {
         >
           <Route
             index
-            element={<Dashboard color={"#CA0D11"} name="turkish" />}
+            element={<ManageShipping color={"#CA0D11"} name="turkish" />}
+          />
+          <Route
+            path="shipment"
+            element={<ManageShipping color={"#CA0D11"} name="turkish" />}
+          />
+          <Route
+            path="shipment/:id"
+            element={
+              <ShipmentDetailsPage color={"#CA0D11"} name="turkish" />
+            }
           />
           <Route
             path="manage-shipping"
             element={<ManageShipping color={"#CA0D11"} name="turkish" />}
+          />
+          <Route
+            path="manage-shipping/:id"
+            element={
+              <ShipmentDetailsPage color={"#CA0D11"} name="turkish" />
+            }
+          />
+          <Route
+            path="financials"
+            element={<Dashboard color={"#CA0D11"} name="turkish" />}
+          />
+          <Route
+            path="financials/:id"
+            element={
+              <FinancialDetailsPage color={"#CA0D11"} name="turkish" />
+            }
+          />
+          <Route
+            path="financial-details/:id"
+            element={
+              <FinancialDetailsPage color={"#CA0D11"} name="turkish" />
+            }
+          />
+          <Route
+            path="financial"
+            element={<Dashboard color={"#CA0D11"} name="turkish" />}
           />
           <Route
             path="document"
@@ -114,11 +251,47 @@ const AppRoutes = () => {
         >
           <Route
             index
-            element={<Dashboard color={"#1C7A39"} name="cotedivoire" />}
+            element={<ManageShipping color={"#1C7A39"} name="cotedivoire" />}
+          />
+          <Route
+            path="shipment"
+            element={<ManageShipping color={"#1C7A39"} name="cotedivoire" />}
+          />
+          <Route
+            path="shipment/:id"
+            element={
+              <ShipmentDetailsPage color={"#1C7A39"} name="cotedivoire" />
+            }
           />
           <Route
             path="manage-shipping"
             element={<ManageShipping color={"#1C7A39"} name="cotedivoire" />}
+          />
+          <Route
+            path="manage-shipping/:id"
+            element={
+              <ShipmentDetailsPage color={"#1C7A39"} name="cotedivoire" />
+            }
+          />
+          <Route
+            path="financials"
+            element={<Dashboard color={"#1C7A39"} name="cotedivoire" />}
+          />
+          <Route
+            path="financials/:id"
+            element={
+              <FinancialDetailsPage color={"#1C7A39"} name="cotedivoire" />
+            }
+          />
+          <Route
+            path="financial-details/:id"
+            element={
+              <FinancialDetailsPage color={"#1C7A39"} name="cotedivoire" />
+            }
+          />
+          <Route
+            path="financial"
+            element={<Dashboard color={"#1C7A39"} name="cotedivoire" />}
           />
           <Route
             path="document"
@@ -133,12 +306,60 @@ const AppRoutes = () => {
             </AuthGuard>
           }
         >
-          <Route index element={<Dashboard color={"#003EA5"} />} />
+          <Route
+            index
+            element={
+              <ManageShipping color={"#003EA5"} name="south-africa" />
+            }
+          />
+          <Route
+            path="shipment"
+            element={
+              <ManageShipping color={"#003EA5"} name="south-africa" />
+            }
+          />
+          <Route
+            path="shipment/:id"
+            element={
+              <ShipmentDetailsPage color={"#003EA5"} name="south-africa" />
+            }
+          />
           <Route
             path="manage-shipping"
-            element={<ManageShipping color={"#003EA5"} />}
+            element={
+              <ManageShipping color={"#003EA5"} name="south-africa" />
+            }
           />
-          <Route path="document" element={<Documents color={"#003EA5"} />} />
+          <Route
+            path="manage-shipping/:id"
+            element={
+              <ShipmentDetailsPage color={"#003EA5"} name="south-africa" />
+            }
+          />
+          <Route
+            path="financials"
+            element={<Dashboard color={"#003EA5"} name="south-africa" />}
+          />
+          <Route
+            path="financials/:id"
+            element={
+              <FinancialDetailsPage color={"#003EA5"} name="south-africa" />
+            }
+          />
+          <Route
+            path="financial-details/:id"
+            element={
+              <FinancialDetailsPage color={"#003EA5"} name="south-africa" />
+            }
+          />
+          <Route
+            path="financial"
+            element={<Dashboard color={"#003EA5"} name="south-africa" />}
+          />
+          <Route
+            path="document"
+            element={<Documents color={"#003EA5"} name="south-africa" />}
+          />
         </Route>
         <Route
           path="/rwanda-dashboard"
@@ -150,11 +371,47 @@ const AppRoutes = () => {
         >
           <Route
             index
-            element={<Dashboard color={"#045195"} name="rwanda" />}
+            element={<ManageShipping color={"#045195"} name="rwanda" />}
+          />
+          <Route
+            path="shipment"
+            element={<ManageShipping color={"#045195"} name="rwanda" />}
+          />
+          <Route
+            path="shipment/:id"
+            element={
+              <ShipmentDetailsPage color={"#045195"} name="rwanda" />
+            }
           />
           <Route
             path="manage-shipping"
             element={<ManageShipping color={"#045195"} name="rwanda" />}
+          />
+          <Route
+            path="manage-shipping/:id"
+            element={
+              <ShipmentDetailsPage color={"#045195"} name="rwanda" />
+            }
+          />
+          <Route
+            path="financials"
+            element={<Dashboard color={"#045195"} name="rwanda" />}
+          />
+          <Route
+            path="financials/:id"
+            element={
+              <FinancialDetailsPage color={"#045195"} name="rwanda" />
+            }
+          />
+          <Route
+            path="financial-details/:id"
+            element={
+              <FinancialDetailsPage color={"#045195"} name="rwanda" />
+            }
+          />
+          <Route
+            path="financial"
+            element={<Dashboard color={"#045195"} name="rwanda" />}
           />
           <Route
             path="document"

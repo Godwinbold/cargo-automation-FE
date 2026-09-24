@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Search, Plus, Edit2, Trash2, AlertTriangle } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, AlertTriangle, Copy, Check } from "lucide-react";
 import Pagination from "../Pagination";
 import AirlineModal from "./AirlineModal";
 import { useGetAllAirlines, useDeleteAirline } from "../../../hooks/useGeneral";
@@ -15,6 +15,26 @@ const AdminAirlines = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAirline, setSelectedAirline] = useState(null);
   const [airlineToDelete, setAirlineToDelete] = useState(null);
+  const [copiedKey, setCopiedKey] = useState(null);
+
+  const handleCopyText = (text, key, label = "ID") => {
+    if (!text) return;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopiedKey(key);
+    toast.success(`${label} copied to clipboard!`);
+    setTimeout(() => {
+      setCopiedKey((prev) => (prev === key ? null : prev));
+    }, 2000);
+  };
   
   useEffect(() => {
     if (isModalOpen || airlineToDelete) {
@@ -175,8 +195,27 @@ const AdminAirlines = () => {
                           <div className="text-sm font-medium text-gray-900">
                             {airline.airlineName}
                           </div>
-                          <div className="text-xs text-gray-500">
-                            ID: {airline.id.substring(0, 8)}...
+                          <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyText(airline.id, `airline-id-${airline.id}`, "Airline ID")}
+                              className="p-0.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                              title={copiedKey === `airline-id-${airline.id}` ? "Copied!" : "Copy Airline ID"}
+                              aria-label="Copy Airline ID"
+                            >
+                              {copiedKey === `airline-id-${airline.id}` ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                            <span
+                              title={airline.id}
+                              onClick={() => handleCopyText(airline.id, `airline-id-${airline.id}`, "Airline ID")}
+                              className="font-mono cursor-pointer hover:text-gray-800"
+                            >
+                              ID: {airline.id.substring(0, 8)}...
+                            </span>
                           </div>
                         </div>
                       </div>

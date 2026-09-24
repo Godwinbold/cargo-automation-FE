@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Pagination from "./Pagination";
@@ -196,7 +197,7 @@ const ActionMenuPortal = ({
           <div className="flex flex-col gap-1">
             <button
               onClick={() => {
-                onView(item.id);
+                onView(item.id, item);
                 onClose();
               }}
               className="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
@@ -353,7 +354,7 @@ const ActionMenuPortal = ({
     >
       <button
         onClick={() => {
-          onView(item.id);
+          onView(item.id, item);
           onClose();
         }}
         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
@@ -466,6 +467,8 @@ const ShipmentTable = ({
   pageSize,
   onPageSizeChange,
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { mutate: addNoteMutation, isPending: isSavingNote } =
     useAddShipmentNote();
@@ -493,9 +496,12 @@ const ShipmentTable = ({
   const [selectedShipment, setSelectedShipment] = useState(null);
   const buttonRefs = useRef({});
 
-  const { data: financialsData } = useGetAirlinesFinancials(airlineId, {
-    pageSize: 1000,
-  });
+  // Fetch financials for all shipments of this airline
+  const { data: financialsData } = useGetAirlinesFinancials(
+    airlineId,
+    { pageSize: 1000 },
+    { enabled: !!airlineId },
+  );
 
   const financialsByShipmentId = useMemo(() => {
     const map = {};
@@ -521,15 +527,40 @@ const ShipmentTable = ({
       }
     }
     if (fin) {
-      setSelectedFinancial({
-        ...fin,
-        shipmentStatus: shipment?.statusDisplay || fin.shipmentStatus,
-      });
-      setIsFinancialViewOnly(true);
-      setShowEditFinancialsModal(true);
+      const match = location.pathname.match(/\/([a-z0-9-]+)-dashboard/);
+      const portalName = match ? match[1] : "united";
+      navigate(
+        `/${portalName}-dashboard/financials/${fin.id || shipment.id}${
+          airlineId ? `?airlineId=${airlineId}` : ""
+        }`,
+        {
+          state: {
+            financial: {
+              ...fin,
+              shipmentStatus: shipment?.statusDisplay || fin.shipmentStatus,
+              shipment,
+            },
+          },
+        },
+      );
     } else {
       toast.info("No financial record found for this shipment.");
     }
+  };
+
+  const handleViewShipment = (id, item) => {
+    const targetItem = item || data?.find((s) => s.id === id);
+    const targetId = id || targetItem?.id;
+    const match = location.pathname.match(/\/([a-z0-9-]+)-dashboard/);
+    const portalName = match ? match[1] : "united";
+    navigate(
+      `/${portalName}-dashboard/shipment/${targetId}${
+        airlineId ? `?airlineId=${airlineId}` : ""
+      }`,
+      {
+        state: { shipment: targetItem },
+      },
+    );
   };
 
   const handleEditFinancial = async (shipment) => {
@@ -886,7 +917,7 @@ const ShipmentTable = ({
             setActiveMenuDoc(null);
             setButtonRect(null);
           }}
-          onView={(id) => openModal(id, "view")}
+          onView={handleViewShipment}
           onAddNote={(id) => openModal(id, "add")}
           onChangeStatus={(item) => {
             setSelectedShipment(item);

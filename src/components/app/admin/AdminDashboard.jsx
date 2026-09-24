@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useInviteUser, useGetAppUsers, useDeleteUser } from "../../../hooks/useAdmin";
-import { Search, UserPlus, Trash2, AlertTriangle } from "lucide-react";
+import { Search, UserPlus, Trash2, AlertTriangle, Copy, Check } from "lucide-react";
 import Pagination from "../Pagination";
 import InviteUserModal from "./InviteUserModal";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,6 +17,26 @@ const AdminDashboard = () => {
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
+  const [copiedKey, setCopiedKey] = useState(null);
+
+  const handleCopyText = (text, key, label = "ID") => {
+    if (!text) return;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopiedKey(key);
+    toast.success(`${label} copied to clipboard!`);
+    setTimeout(() => {
+      setCopiedKey((prev) => (prev === key ? null : prev));
+    }, 2000);
+  };
 
   const handleDeleteClick = (user) => {
     setUserToDelete(user);
@@ -192,8 +212,23 @@ const AdminDashboard = () => {
                           <div className="text-sm font-medium text-gray-900">
                             {user.firstName} {user.middleName} {user.lastName}
                           </div>
-                          <div className="text-xs text-gray-500">
-                            ID: {user.id.substring(0, 8)}...
+                          <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                            <span title={user.id}>ID: {user.id.substring(0, 8)}...</span>
+                            {user.id && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyText(user.id, `user-id-${user.id}`, "User ID")}
+                                className="p-0.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                                title={copiedKey === `user-id-${user.id}` ? "Copied!" : "Copy User ID"}
+                                aria-label="Copy User ID"
+                              >
+                                {copiedKey === `user-id-${user.id}` ? (
+                                  <Check className="w-3 h-3 text-emerald-600" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -223,14 +258,48 @@ const AdminDashboard = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {user.idNumber || "-"}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-medium text-gray-900 font-mono">
+                          {user.idNumber || "-"}
+                        </span>
+                        {user.idNumber && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(user.idNumber, `id-num-${user.id}`, "ID Number")}
+                            className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                            title={copiedKey === `id-num-${user.id}` ? "Copied!" : "Copy ID Number"}
+                            aria-label="Copy ID Number"
+                          >
+                            {copiedKey === `id-num-${user.id}` ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        )}
                       </div>
-                      <div
-                        className="text-xs text-gray-500 mt-1 truncate max-w-[120px]"
-                        title={user.airlineId}
-                      >
-                        {user.airlineId ? "Has Airline" : "None"}
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
+                        <span
+                          className="truncate max-w-[120px] font-mono"
+                          title={user.airlineId}
+                        >
+                          {user.airlineId || "N/A"}
+                        </span>
+                        {user.airlineId && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(user.airlineId, `airline-id-${user.id}`, "Airline ID")}
+                            className="p-0.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                            title={copiedKey === `airline-id-${user.id}` ? "Copied!" : "Copy Airline ID"}
+                            aria-label="Copy Airline ID"
+                          >
+                            {copiedKey === `airline-id-${user.id}` ? (
+                              <Check className="w-3 h-3 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right text-sm text-gray-500">

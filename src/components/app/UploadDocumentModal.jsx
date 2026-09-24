@@ -155,7 +155,7 @@ const UploadDocumentModal = ({
               )}
             </div>
 
-            <div className="mt-6 flex  flex-col items-center justify-between px-4 py-3 bg-gray-50 rounded-xl border border-gray-100">
+            {/* <div className="mt-6 flex  flex-col items-center justify-between px-4 py-3 bg-gray-50 rounded-xl border border-gray-100">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
                 Uploading As ID
               </span>
@@ -163,7 +163,7 @@ const UploadDocumentModal = ({
               <span className="text-sm font-mono font-medium text-gray-600">
                 {uploadedByUserId || "N/A"}
               </span>
-            </div>
+            </div> */}
           </div>
 
           {/* Footer */}
