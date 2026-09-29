@@ -815,6 +815,10 @@ const ShipmentTable = ({
                   Airway Bill Number
                 </th>
                 <th className="border-b border-gray-200 px-4 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  Has Financials
+                </th>
+
+                <th className="border-b border-gray-200 px-4 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="border-b border-gray-200 px-4 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
@@ -836,6 +840,17 @@ const ShipmentTable = ({
                     </td>
                     <td className="border-b border-gray-300 px-4 py-3 font-medium text-gray-900">
                       {item.airwayBillNumber}
+                    </td>
+                    <td className="border-b border-gray-300 px-4 py-3">
+                      {item.hasFinancial ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                          Yes
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                          No
+                        </span>
+                      )}
                     </td>
                     <td className="border-b border-gray-300 px-4 py-3">
                       <span
