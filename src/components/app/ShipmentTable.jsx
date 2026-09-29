@@ -43,6 +43,7 @@ const statusColors = {
 // Action Menu Portal Component (Mobile Bottom Sheet + Desktop Clamped Popover)
 const ActionMenuPortal = ({
   buttonRect,
+  triggerElement,
   onClose,
   onView,
   onAddNote,
@@ -107,7 +108,11 @@ const ActionMenuPortal = ({
   // Click outside, escape key, and scroll handlers
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        (!triggerElement || !triggerElement.contains(event.target))
+      ) {
         onClose();
       }
     };
@@ -853,6 +858,7 @@ const ShipmentTable = ({
                     <td className="border-b border-gray-300 px-4 py-3 text-center">
                       <button
                         ref={(el) => (buttonRefs.current[item.id] = el)}
+                        onMouseDown={(e) => e.stopPropagation()}
                         onClick={() => {
                           if (activeMenuId === item.id) {
                             setActiveMenuId(null);
@@ -903,6 +909,7 @@ const ShipmentTable = ({
         <ActionMenuPortal
           item={activeMenuDoc}
           buttonRect={buttonRect}
+          triggerElement={buttonRefs.current[activeMenuId]}
           hasFinancial={Boolean(
             activeMenuDoc?.hasFinancial ??
               activeMenuDoc?.["has-financial"] ??

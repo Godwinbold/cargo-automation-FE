@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("airlineId");
     localStorage.removeItem("userId");
     localStorage.removeItem("last_active_time");
+    localStorage.removeItem("userEmail");
     setToken(null);
     setUser(null);
   };

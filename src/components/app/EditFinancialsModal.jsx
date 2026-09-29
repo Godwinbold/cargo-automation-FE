@@ -149,9 +149,10 @@ const EditFinancialsModal = ({
   // Initialize form with existing data — all 26 fields, formatted monetary values
   useEffect(() => {
     if (isOpen && financialData) {
-      const dateOfIssue = financialData.dateOfIssue
-        ? new Date(financialData.dateOfIssue).toISOString().split("T")[0]
+   const dateOfIssue = financialData.dateOfIssue
+       ? String(financialData.dateOfIssue).slice(0, 10)
         : "";
+
 
       setFormData(
         applyFinancialCalculations({

@@ -16,7 +16,7 @@ const FilteredResult = ({ isLoading, data }) => {
   };
 
   const formatWeight = (kg = 0) => {
-    return `${(kg / 1_000).toFixed(2)}kg`;
+    return `${parseFloat(kg.toFixed(2)).toLocaleString()}kg`;
   };
 
   const stats = [
@@ -25,8 +25,8 @@ const FilteredResult = ({ isLoading, data }) => {
       value: isLoading
         ? "..."
         : (resultData.totalShipments || 0).toLocaleString(),
-      change: "+12.5% from last month",
-      isPositive: true,
+      change: resultData.shipmentsGrowth || null,
+      isPositive: (resultData.shipmentsGrowthPercentage ?? 0) >= 0,
       icon: Plane,
       iconBg: "bg-[#D3EAF8]",
       iconColor: "text-[#155C84]",
@@ -34,8 +34,8 @@ const FilteredResult = ({ isLoading, data }) => {
     {
       title: "Total Revenue",
       value: isLoading ? "..." : formatRevenue(resultData.totalRevenue || 0),
-      change: "+8.2% from last month",
-      isPositive: true,
+      change: resultData.revenueGrowth || null,
+      isPositive: (resultData.revenueGrowthPercentage ?? 0) >= 0,
       icon: DollarSign,
       iconBg: "bg-[#D1FADB]",
       iconColor: "text-[#22CAD5]",
@@ -43,8 +43,8 @@ const FilteredResult = ({ isLoading, data }) => {
     {
       title: "Average Weight",
       value: isLoading ? "..." : formatWeight(resultData.averageWeightKg || 0),
-      change: "-8.2% from last month",
-      isPositive: false,
+      change: resultData.averageWeightGrowth || null,
+      isPositive: (resultData.averageWeightGrowthPercentage ?? 0) >= 0,
       icon: Weight,
       iconBg: "bg-[#FDDECE]",
       iconColor: "text-[#E86E18]",
@@ -52,8 +52,8 @@ const FilteredResult = ({ isLoading, data }) => {
     {
       title: "Total Weight",
       value: isLoading ? "..." : formatWeight(resultData.totalWeightKg || 0),
-      change: "+5.1% from last month",
-      isPositive: true,
+      change: resultData.totalWeightGrowth || null,
+      isPositive: (resultData.totalWeightGrowthPercentage ?? 0) >= 0,
       icon: Weight,
       iconBg: "bg-[#EDE9FE]",
       iconColor: "text-[#7C3AED]",
@@ -79,18 +79,20 @@ const FilteredResult = ({ isLoading, data }) => {
               <span className="text-[28px] font-semibold text-[#202127]">
                 {stat.value}
               </span>
-              <div
-                className={`flex items-center text-xs font-medium ${
-                  stat.isPositive ? "text-[#20B645]" : "text-[#EA580C]"
-                }`}
-              >
-                {stat.isPositive ? (
-                  <ArrowUp className="w-3 h-3 mr-1" />
-                ) : (
-                  <ArrowDown className="w-3 h-3 mr-1" />
-                )}
-                {stat.change}
-              </div>
+              {stat.change && (
+                <div
+                  className={`flex items-center text-xs font-medium ${
+                    stat.isPositive ? "text-[#20B645]" : "text-[#EA580C]"
+                  }`}
+                >
+                  {stat.isPositive ? (
+                    <ArrowUp className="w-3 h-3 mr-1" />
+                  ) : (
+                    <ArrowDown className="w-3 h-3 mr-1" />
+                  )}
+                  {stat.change}
+                </div>
+              )}
             </div>
 
             <div

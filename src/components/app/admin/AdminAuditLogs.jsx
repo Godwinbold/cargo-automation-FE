@@ -53,9 +53,9 @@ const renderChanges = (changesString) => {
       if (quoteChar === "'" || quoteChar === '"' || quoteChar === "`") {
         const closingQuoteIndex = rest.indexOf(quoteChar, 1);
         if (closingQuoteIndex !== -1) {
-          from = rest.substring(1, closingQuoteIndex);
           const toPart = rest.substring(closingQuoteIndex + 1).trim();
           if (toPart.startsWith("to ")) {
+            from = rest.substring(1, closingQuoteIndex);
             const toValueRaw = toPart.substring(3).trim();
             if (toValueRaw.startsWith(quoteChar) && toValueRaw.endsWith(quoteChar)) {
               to = toValueRaw.substring(1, toValueRaw.length - 1);
@@ -159,21 +159,37 @@ const AdminAuditLogs = () => {
 
   const handleCopyText = (text, key, label = "ID") => {
     if (!text) return;
+    const onSuccess = () => {
+      setCopiedKey(key);
+      toast.success(`${label} copied to clipboard!`);
+      setTimeout(() => {
+        setCopiedKey((prev) => (prev === key ? null : prev));
+      }, 2000);
+    };
+
     if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(text);
-    } else {
+      navigator.clipboard
+        .writeText(String(text))
+        .then(onSuccess)
+        .catch(() => toast.error(`Failed to copy ${label}`));
+      return;
+    }
+
+    try {
       const textarea = document.createElement("textarea");
-      textarea.value = text;
+      textarea.value = String(text);
       document.body.appendChild(textarea);
       textarea.select();
-      document.execCommand("copy");
+      const successful = document.execCommand("copy");
       document.body.removeChild(textarea);
+      if (successful) {
+        onSuccess();
+      } else {
+        toast.error(`Failed to copy ${label}`);
+      }
+    } catch {
+      toast.error(`Failed to copy ${label}`);
     }
-    setCopiedKey(key);
-    toast.success(`${label} copied to clipboard!`);
-    setTimeout(() => {
-      setCopiedKey((prev) => (prev === key ? null : prev));
-    }, 2000);
   };
 
   // Fetch users for the filter dropdown
@@ -357,7 +373,7 @@ const AdminAuditLogs = () => {
                             <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
                               <button
                                 type="button"
-                                onClick={() => handleCopyText(log.userId, `user-id-${log.id || log.userId}`, "User ID")}
+                                onClick={() => handleCopyText(String(log.userId), `user-id-${log.id || log.userId}`, "User ID")}
                                 className="p-0.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
                                 title={copiedKey === `user-id-${log.id || log.userId}` ? "Copied!" : "Copy User ID"}
                                 aria-label="Copy User ID"
@@ -369,11 +385,11 @@ const AdminAuditLogs = () => {
                                 )}
                               </button>
                               <span
-                                title={log.userId}
-                                onClick={() => handleCopyText(log.userId, `user-id-${log.id || log.userId}`, "User ID")}
+                                title={String(log.userId)}
+                                onClick={() => handleCopyText(String(log.userId), `user-id-${log.id || log.userId}`, "User ID")}
                                 className="font-mono cursor-pointer hover:text-gray-800"
                               >
-                                ID: {log.userId.substring(0, 8)}...
+                                ID: {String(log.userId).substring(0, 8)}...
                               </span>
                             </div>
                           )}
@@ -397,7 +413,7 @@ const AdminAuditLogs = () => {
                         <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
                           <button
                             type="button"
-                            onClick={() => handleCopyText(log.entityId, `entity-id-${log.id || log.entityId}`, "Entity ID")}
+                            onClick={() => handleCopyText(String(log.entityId), `entity-id-${log.id || log.entityId}`, "Entity ID")}
                             className="p-0.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
                             title={copiedKey === `entity-id-${log.id || log.entityId}` ? "Copied!" : "Copy Entity ID"}
                             aria-label="Copy Entity ID"
@@ -409,11 +425,11 @@ const AdminAuditLogs = () => {
                             )}
                           </button>
                           <span
-                            title={log.entityId}
-                            onClick={() => handleCopyText(log.entityId, `entity-id-${log.id || log.entityId}`, "Entity ID")}
+                            title={String(log.entityId)}
+                            onClick={() => handleCopyText(String(log.entityId), `entity-id-${log.id || log.entityId}`, "Entity ID")}
                             className="font-mono cursor-pointer hover:text-gray-800"
                           >
-                            ID: {log.entityId.substring(0, 8)}...
+                            ID: {String(log.entityId).substring(0, 8)}...
                           </span>
                         </div>
                       )}

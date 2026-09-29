@@ -36,7 +36,7 @@ const AirlineModal = ({ isOpen, onClose, selectedAirline }) => {
         {
           onSuccess: () => {
             toast.success("Airline updated successfully!");
-            queryClient.invalidateQueries(["allAirlines"]);
+            queryClient.invalidateQueries({ queryKey: ["allAirlines"] });
             onClose();
           },
           onError: (error) => {
@@ -53,7 +53,7 @@ const AirlineModal = ({ isOpen, onClose, selectedAirline }) => {
       createAirline(payload, {
         onSuccess: () => {
           toast.success("Airline created successfully!");
-          queryClient.invalidateQueries(["allAirlines"]);
+          queryClient.invalidateQueries({ queryKey: ["allAirlines"] });
           onClose();
         },
         onError: (error) => {

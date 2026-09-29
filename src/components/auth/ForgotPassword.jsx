@@ -1,13 +1,12 @@
 import React, { useState } from "react";
 import { CheckCircle, XCircle, ArrowLeft, Mail } from "lucide-react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { PORTAL_CONFIGS } from "../../constants/configFile";
 import authApi from "../../api/auth";
 
 const ForgotPasswordPage = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const nameSlug = searchParams.get("name") || "default";
   const airlineId = searchParams.get("airlineId") || "";
   const config = PORTAL_CONFIGS[nameSlug];
@@ -22,6 +21,21 @@ const ForgotPasswordPage = () => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [apiError, setApiError] = useState("");
+
+  // ── Mutation ──────────────────────────────────────────────────────────────
+  const { mutate: requestReset, isPending } = useMutation({
+    mutationFn: (data) => authApi.forgotPassword(data),
+    onSuccess: () => {
+      setIsSubmitted(true);
+      setApiError("");
+    },
+    onError: (err) => {
+      setApiError(
+        err?.response?.data?.message ||
+          "Failed to send reset link. Please verify your email and try again.",
+      );
+    },
+  });
 
   if (!config) {
     return (
@@ -44,21 +58,6 @@ const ForgotPasswordPage = () => {
 
   const handleBlur = (field) =>
     setTouched((prev) => ({ ...prev, [field]: true }));
-
-  // ── Mutation ──────────────────────────────────────────────────────────────
-  const { mutate: requestReset, isPending } = useMutation({
-    mutationFn: (data) => authApi.forgotPassword(data),
-    onSuccess: () => {
-      setIsSubmitted(true);
-      setApiError("");
-    },
-    onError: (err) => {
-      setApiError(
-        err?.response?.data?.message ||
-          "Failed to send reset link. Please verify your email and try again.",
-      );
-    },
-  });
 
   const handleSubmit = (e) => {
     e.preventDefault();

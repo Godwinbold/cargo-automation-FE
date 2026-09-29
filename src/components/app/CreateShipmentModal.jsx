@@ -22,7 +22,8 @@ const CreateShipmentModal = ({ isOpen, onClose, airlineId, color }) => {
   const queryClient = useQueryClient();
   const { mutate: createShipment, isPending: isCreating } = useCreateShipment();
 
-  const today = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   const [newShipment, setNewShipment] = useState({
     airwayBillNumber: "",
@@ -55,7 +56,7 @@ const CreateShipmentModal = ({ isOpen, onClose, airlineId, color }) => {
       {
         onSuccess: () => {
           toast.success("Shipment created successfully!");
-          queryClient.invalidateQueries(["shipments", airlineId]);
+          queryClient.invalidateQueries({ queryKey: ["shipments", airlineId] });
           onClose();
           setNewShipment({
             airwayBillNumber: "",

@@ -107,37 +107,6 @@ const FileTypeIcon = ({ contentType }) => {
   return <FileIcon className="w-5 h-5 text-gray-400" />;
 };
 
-const SAMPLE_FINANCIAL_DATA = {
-  mawb: "123456754",
-  dateOfIssue: "2026-09-21T00:00:00",
-  agentsOrClients: "3456",
-  product: "fgjfjjgfj",
-  routing: "2345",
-  flightNo: "4567",
-  pieces: 566,
-  chargeableWeightKg: 45655000.0,
-  grossWeightKg: 4567000.0,
-  spotRate: 567.0,
-  publishedRates: 5678.0,
-  roe: 678.0,
-  freightAmountNGN: 51333.0,
-  ncaaCharges5Percent: 2566.65,
-  totalChargeNGN: 18168.0,
-  chargesCollect: 51333.0,
-  fuelSurcharge: 5678.0,
-  secSurcharge: 5678.0,
-  handlingSurcharge: 567.0,
-  surchargeDueAgent: 5678.0,
-  awbFee: 567.0,
-  gsaCommissionNGN: 5678.0,
-  vatOnCommission: 425.85,
-  amtDueAirline: 57152.15,
-  dueAPGInc: 1703.4,
-  dueSLC: 5678.0,
-  createdDate: "2026-09-21T10:18:58.1101048+00:00",
-  updatedDate: "2026-09-21T10:18:58.1101049+00:00",
-};
-
 const ShipmentDetailsPage = ({ color = "#04549B", name }) => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -212,11 +181,7 @@ const ShipmentDetailsPage = ({ color = "#04549B", name }) => {
     });
 
   const financial = useMemo(() => {
-    const live = directFinancialData?.data || matchedFinancialByAnyId;
-    if (live) {
-      return { ...SAMPLE_FINANCIAL_DATA, ...live };
-    }
-    return SAMPLE_FINANCIAL_DATA;
+    return directFinancialData?.data || matchedFinancialByAnyId || null;
   }, [directFinancialData, matchedFinancialByAnyId]);
 
   // 3. Fetch linked documents for this shipment
@@ -360,9 +325,7 @@ const ShipmentDetailsPage = ({ color = "#04549B", name }) => {
               >
                 <Edit2 className="w-4 h-4" />
                 <span>
-                  {activeTab === "financials"
-                    ? "Edit Financial"
-                    : "Edit Shipment"}
+                  {financial ? "Edit Financial" : "Create Financial"}
                 </span>
               </button>
 
@@ -448,7 +411,7 @@ const ShipmentDetailsPage = ({ color = "#04549B", name }) => {
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                   <span>
-                    Edit {activeTab === "financials" ? "Financial" : "Shipment"}
+                    {financial ? "Edit Financial" : "Create Financial"}
                   </span>
                 </button>
                 <button

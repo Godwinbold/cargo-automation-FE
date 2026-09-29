@@ -7,6 +7,7 @@ import { formatShipmentId } from "../../utils/shipmentUtils";
 // Action Menu Portal Component (Mobile Bottom Sheet + Desktop Clamped Popover)
 const ActionMenuPortal = ({
   buttonRect,
+  triggerElement,
   onClose,
   onEdit,
   onView,
@@ -65,7 +66,11 @@ const ActionMenuPortal = ({
   // Click outside, escape key, and scroll handlers
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        (!triggerElement || !triggerElement.contains(event.target))
+      ) {
         onClose();
       }
     };
@@ -395,6 +400,7 @@ const FinancialTable = ({
                   <td className="px-4 py-3 border-l border-gray-100 sticky right-0 bg-white group-hover:bg-gray-50 z-10 text-center">
                     <button
                       ref={(el) => (buttonRefs.current[item.id] = el)}
+                      onMouseDown={(e) => e.stopPropagation()}
                       onClick={() => handleMenuOpen(item.id)}
                       className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
                       aria-label="Actions"
@@ -426,6 +432,7 @@ const FinancialTable = ({
             item={currentItem}
             isLocked={isLocked}
             buttonRect={buttonRect}
+            triggerElement={buttonRefs.current[activeMenuId]}
             onClose={() => setActiveMenuId(null)}
             onEdit={onEdit}
             onView={onView}

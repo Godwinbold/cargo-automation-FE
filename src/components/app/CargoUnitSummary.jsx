@@ -1,20 +1,7 @@
 import React from "react";
 
 const CargoUnitSummary = ({ isLoading, data = [] }) => {
-  const defaultData = [
-    {
-      name: "Turkish Airline",
-      shipment: "",
-      weight: "",
-      amount: "",
-    },
-    { name: "RwandAir", shipment: "", weight: "", amount: "" },
-    { name: "Air Cote d' voire", shipment: "", weight: "", amount: "" },
-    { name: "United Cargo", shipment: "", weight: "", amount: "" },
-    { name: "South African Airways", shipment: "", weight: "", amount: "" },
-  ];
-
-  const displayData = data.length > 0 ? data : defaultData;
+  const displayData = data;
 
   return (
     <div className="bg-white mt-[82px] rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-[#D3EBF8] p-6 w-full">
@@ -96,7 +83,7 @@ const CargoUnitSummary = ({ isLoading, data = [] }) => {
                   </td>
                   <td className="py-4 px-4 text-[#525252] text-sm border-b border-gray-50 group-last:border-0">
                     {item.totalWeightKg !== undefined
-                      ? `${(item.totalWeightKg / 1000).toFixed(2)}kg`
+                      ? `${item.totalWeightKg.toLocaleString(undefined, { maximumFractionDigits: 2 })}kg`
                       : item.weight || "-"}
                   </td>
                   <td className="py-4 px-4 text-[#525252] text-sm border-b border-gray-50 group-last:border-0">

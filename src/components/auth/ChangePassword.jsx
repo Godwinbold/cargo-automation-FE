@@ -35,6 +35,33 @@ const ChangePasswordPage = () => {
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
+  const userEmail = user?.email || localStorage.getItem("userEmail") || "";
+
+  // ── Mutation ──────────────────────────────────────────────────────────────
+  const { mutate, isPending } = useMutation({
+    mutationFn: () =>
+      authApi.changePassword({
+        email: userEmail,
+        oldPassword: form.oldPassword,
+        newPassword: form.newPassword,
+        confirmPassword: form.confirmPassword,
+      }),
+    onSuccess: () => {
+      setSuccessMsg("Password changed successfully! Redirecting to login…");
+      setTimeout(() => {
+        navigate(loginUrl);
+      }, 2000);
+    },
+    onError: (err) => {
+      setErrorMsg(
+        getAuthErrorMessage(
+          err,
+          "Failed to change password. Please try again."
+        )
+      );
+    },
+  });
+
   if (!config) {
     return (
       <div className="flex items-center justify-center h-screen text-gray-700">
@@ -73,33 +100,6 @@ const ChangePasswordPage = () => {
     setErrorMsg("");
     setSuccessMsg("");
   };
-
-  const userEmail = localStorage.getItem("userEmail") || user?.email || "";
-
-  // ── Mutation ──────────────────────────────────────────────────────────────
-  const { mutate, isPending } = useMutation({
-    mutationFn: () =>
-      authApi.changePassword({
-        email: userEmail,
-        oldPassword: form.oldPassword,
-        newPassword: form.newPassword,
-        confirmPassword: form.confirmPassword,
-      }),
-    onSuccess: () => {
-      setSuccessMsg("Password changed successfully! Redirecting to login…");
-      setTimeout(() => {
-        navigate(loginUrl);
-      }, 2000);
-    },
-    onError: (err) => {
-      setErrorMsg(
-        getAuthErrorMessage(
-          err,
-          "Failed to change password. Please try again."
-        )
-      );
-    },
-  });
 
   const handleSubmit = (e) => {
     e.preventDefault();

@@ -242,7 +242,7 @@ const AnalyticalCharts = ({ monthlyData, averageWeight, isLoading }) => {
           </ResponsiveContainer>
         </div>
 
-        {averageWeight && averageWeight.growthPercentage !== undefined && (
+        {averageWeight && typeof averageWeight.growthPercentage === "number" && (
           <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 uppercase">
               Growth
