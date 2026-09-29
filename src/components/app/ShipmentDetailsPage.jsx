@@ -349,16 +349,7 @@ const ShipmentDetailsPage = ({ color = "#04549B", name }) => {
             </>
           )}
 
-          {activeTab === "documents" && (
-            <button
-              onClick={() => setIsUploadModalOpen(true)}
-              style={{ backgroundColor: color }}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-xl hover:opacity-95 transition-all shadow-sm"
-            >
-              <FileUp className="w-4 h-4" />
-              <span>Upload Document</span>
-            </button>
-          )}
+         
         </div>
       </div>
 
