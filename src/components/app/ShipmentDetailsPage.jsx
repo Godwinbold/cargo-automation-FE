@@ -398,39 +398,7 @@ const ShipmentDetailsPage = ({ color = "#04549B", name }) => {
               • Created on {formatDate(shipment?.createdDate || financial?.createdDate)}
             </p>
 
-            {/* Edit and Delete under Shipment ID */}
-            {isAccepted && (
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  onClick={() => {
-                    if (financial) setIsEditModalOpen(true);
-                    else setIsCreateFinancialModalOpen(true);
-                  }}
-                  style={{ borderColor: color, color }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white border rounded-xl hover:bg-gray-50 transition-all shadow-xs"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                  <span>
-                    {financial ? "Edit Financial" : "Create Financial"}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    if (activeTab === "financials" && financial) {
-                      setIsDeleteModalOpen(true);
-                    } else {
-                      setIsDeleteShipmentModalOpen(true);
-                    }
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all shadow-xs"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>
-                    Delete {activeTab === "financials" && financial ? "Financial" : "Shipment"}
-                  </span>
-                </button>
-              </div>
-            )}
+         
           </div>
 
           {/* Quick Metrics Bar */}
